@@ -1,8 +1,9 @@
 import pygame
 import sys
+import random
 from player import Player
 from environment import Environment
-from entity import NPC, QuestGiver
+from entity import NPC, QuestGiver, Item, Chest
 from audio import AudioManager
 from visuals import Visuals
 from menu import Menu
@@ -22,7 +23,7 @@ small_font = pygame.font.Font(None, 36)
 current_game_state = "MENU"
 
 # Menu setup
-menu = Menu(SCREEN, font, small_font, SCREEN_WIDTH, SCREEN_HEIGHT)
+menu = Menu(SCREEN, font, small_font, SCREEN_WIDTH, SCREEN_HEIGHT, audio_manager)
 
 # Dialogue setup
 dialogue_box = DialogueBox(SCREEN, small_font, SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -36,6 +37,7 @@ all_sprites = pygame.sprite.Group(player)
 
 # NPCs
 npcs = pygame.sprite.Group()
+
 # Village NPCs
 village_elder = QuestGiver("Elder", 200, 200, [
     "Welcome to our village, young adventurer!",
@@ -62,8 +64,55 @@ forest_guide = NPC("Guide", 150, 350, [
     "Stay on the path and you'll be safe."
 ])
 
-npcs.add(village_elder, blacksmith, merchant, forest_guide)
+# Wandering NPCs
+villager1 = NPC("Villager", 300, 300, [
+    "Good day, traveler!",
+    "The weather has been lovely lately.",
+    "I hope you enjoy your stay in our village."
+])
+
+villager2 = NPC("Farmer", 500, 400, [
+    "My crops are growing well this season.",
+    "The soil here is very fertile.",
+    "Would you like to buy some vegetables?"
+])
+
+child_npc = NPC("Child", 250, 450, [
+    "Have you seen my ball?",
+    "I was playing near the well...",
+    "Mom says not to talk to strangers, but you look nice!"
+])
+
+old_woman = NPC("Old Woman", 450, 300, [
+    "Back in my day, this village was much smaller.",
+    "So many new faces these days...",
+    "Be careful out there, young one."
+])
+npcs.add(village_elder, blacksmith, merchant, forest_guide, villager1, villager2, child_npc, old_woman)
 all_sprites.add(npcs)
+
+# Items and collectibles
+items = pygame.sprite.Group()
+# Add some herbs for the quest
+for i in range(8):
+    herb_x = random.randint(100, 700)
+    herb_y = random.randint(100, 500)
+    herb = Item("herb", herb_x, herb_y)
+    items.add(herb)
+
+# Add some coins
+for i in range(5):
+    coin_x = random.randint(150, 650)
+    coin_y = random.randint(150, 450)
+    coin = Item("coin", coin_x, coin_y)
+    items.add(coin)
+
+# Add chests
+chest1 = Chest(350, 500, [{"type": "coin", "amount": 10}, {"type": "potion", "amount": 1}])
+chest2 = Chest(550, 350, [{"type": "herb", "amount": 3}])
+items.add(chest1, chest2)
+
+all_sprites.add(items)
 
 environment = Environment()
 visuals = Visuals(SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -111,13 +160,15 @@ def draw_controller_info():
 def draw_settings_menu():
     SCREEN.fill((40, 20, 60))
     title = font.render("Settings", True, (255, 255, 255))
-    volume_info = small_font.render("Volume: 100%", True, (255, 255, 255))
+    volume_info = small_font.render(f"Volume: {int(audio_manager.volume * 100)}%", True, (255, 255, 255))
+    volume_controls = small_font.render("Use +/- to adjust volume", True, (200, 200, 200))
     graphics_info = small_font.render("Graphics: Pixel Perfect", True, (255, 255, 255))
     back_info = small_font.render("Press ESC to go back", True, (255, 255, 255))
 
     SCREEN.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 150))
-    SCREEN.blit(volume_info, (SCREEN_WIDTH // 2 - volume_info.get_width() // 2, 250))
-    SCREEN.blit(graphics_info, (SCREEN_WIDTH // 2 - graphics_info.get_width() // 2, 290))
+    SCREEN.blit(volume_info, (SCREEN_WIDTH // 2 - volume_info.get_width() // 2, 220))
+    SCREEN.blit(volume_controls, (SCREEN_WIDTH // 2 - volume_controls.get_width() // 2, 250))
+    SCREEN.blit(graphics_info, (SCREEN_WIDTH // 2 - graphics_info.get_width() // 2, 320))
     SCREEN.blit(back_info, (SCREEN_WIDTH // 2 - back_info.get_width() // 2, 400))
     pygame.display.flip()
 
@@ -160,6 +211,14 @@ def check_npc_interaction():
             return npc
     return None
 
+def check_item_pickup():
+    for item in items:
+        distance = ((player.rect.centerx - item.rect.centerx) ** 2 + 
+                   (player.rect.centery - item.rect.centery) ** 2) ** 0.5
+        if distance < 40:  # Pickup range
+            return item
+    return None
+
 def draw_quest_log():
     SCREEN.fill((20, 20, 40))
     title = font.render("Quest Log", True, (255, 255, 255))
@@ -182,7 +241,7 @@ def draw_quest_log():
             # Show progress
             if quest['type'] == 'collect':
                 progress = quest_system.get_quest_progress(quest['id'])
-                target = quest['target']
+                target = sum(quest['requirements'].values())
                 progress_text = small_font.render(f"Progress: {progress}/{target}", True, (150, 255, 150))
                 SCREEN.blit(progress_text, (120, y_offset + 60))
             
@@ -212,6 +271,7 @@ while running:
                         cutscene_active = True
                         cutscene_step = 0
                         cutscene_timer = 0
+                        audio_manager.play_sound("menu_select")
                     elif selected_option == "Controller":
                         current_game_state = "CONTROLLER_INFO"
                     elif selected_option == "Settings":
@@ -237,9 +297,18 @@ while running:
                     nearby_npc = check_npc_interaction()
                     if nearby_npc:
                         dialogue_box.set_dialogues(nearby_npc.dialogues)
+                        audio_manager.play_sound("talk")
                         if isinstance(nearby_npc, QuestGiver) and not quest_system.has_quest(nearby_npc.quest_id):
                             quest_system.add_quest(nearby_npc.quest_id, nearby_npc.quest_name, 
                                                  nearby_npc.quest_description, nearby_npc.quest_requirements)
+                    else:
+                        # Check for item pickup
+                        nearby_item = check_item_pickup()
+                        if nearby_item:
+                            quest_system.add_item_to_inventory(nearby_item.item_type)
+                            audio_manager.play_sound("item_pickup")
+                            items.remove(nearby_item)
+                            all_sprites.remove(nearby_item)
                 
                 elif event.key in [pygame.K_SPACE, pygame.K_RETURN] and dialogue_box.visible:
                     dialogue_box.next_dialogue()
@@ -257,9 +326,17 @@ while running:
                     player.reset_position()
                     environment.reset_levels()
             
-            elif current_game_state in ["CONTROLLER_INFO", "SETTINGS"]:
+            elif current_game_state == "CONTROLLER_INFO":
                 if event.key == pygame.K_ESCAPE:
                     current_game_state = "MENU"
+            
+            elif current_game_state == "SETTINGS":
+                if event.key == pygame.K_ESCAPE:
+                    current_game_state = "MENU"
+                elif event.key == pygame.K_PLUS or event.key == pygame.K_EQUALS:
+                    audio_manager.adjust_volume(0.1)
+                elif event.key == pygame.K_MINUS:
+                    audio_manager.adjust_volume(-0.1)
 
     # Update game state
     if current_game_state == "MENU":
@@ -282,7 +359,13 @@ while running:
         else:
             # Only update if dialogue is not visible
             if not dialogue_box.visible:
-                player.update(environment.get_current_walls())
+                all_walls = environment.get_current_walls()
+                player.update(all_walls)
+                
+                # Update wandering NPCs
+                for npc in npcs:
+                    if hasattr(npc, 'update'):
+                        npc.update()
                 
                 # Simple camera follow
                 camera_x = player.rect.centerx - SCREEN_WIDTH // 2
@@ -302,6 +385,13 @@ while running:
                 screen_y = sprite.rect.y - camera_y
                 SCREEN.blit(sprite.image, (screen_x, screen_y))
             
+            # Draw UI elements
+            visuals.draw_ui_elements(SCREEN, 100, 50)
+            
+            # Draw minimap
+            npc_positions = [(npc.rect.centerx, npc.rect.centery) for npc in npcs]
+            visuals.draw_minimap(SCREEN, (player.rect.centerx, player.rect.centery), npc_positions)
+            
             # Draw interaction prompt
             if not dialogue_box.visible:
                 nearby_npc = check_npc_interaction()
@@ -312,6 +402,15 @@ while running:
                     prompt_rect.y = 50
                     pygame.draw.rect(SCREEN, (0, 0, 0, 128), prompt_rect.inflate(20, 10))
                     SCREEN.blit(prompt, prompt_rect)
+                else:
+                    nearby_item = check_item_pickup()
+                    if nearby_item:
+                        prompt = small_font.render(f"Press SPACE to pick up {nearby_item.item_type}", True, (255, 255, 255))
+                        prompt_rect = prompt.get_rect()
+                        prompt_rect.centerx = SCREEN_WIDTH // 2
+                        prompt_rect.y = 50
+                        pygame.draw.rect(SCREEN, (0, 0, 0, 128), prompt_rect.inflate(20, 10))
+                        SCREEN.blit(prompt, prompt_rect)
             
             dialogue_box.draw()
             

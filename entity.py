@@ -1,10 +1,16 @@
 import pygame
+import random
 
 class NPC(pygame.sprite.Sprite):
     def __init__(self, name, x, y, dialogues):
         super().__init__()
         self.name = name
         self.dialogues = dialogues
+        self.original_x = x
+        self.original_y = y
+        self.wander_timer = 0
+        self.wander_direction = random.choice([(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)])
+        self.wander_speed = 0.5
         
         # Create pixel art NPC
         self.image = pygame.Surface((32, 48))
@@ -16,7 +22,11 @@ class NPC(pygame.sprite.Sprite):
             "Elder": {"hair": (200, 200, 200), "shirt": (100, 50, 150), "pants": (50, 50, 50)},
             "Blacksmith": {"hair": (139, 69, 19), "shirt": (150, 75, 0), "pants": (101, 67, 33)},
             "Merchant": {"hair": (255, 215, 0), "shirt": (0, 150, 0), "pants": (139, 69, 19)},
-            "Guide": {"hair": (139, 69, 19), "shirt": (34, 139, 34), "pants": (139, 69, 19)}
+            "Guide": {"hair": (139, 69, 19), "shirt": (34, 139, 34), "pants": (139, 69, 19)},
+            "Villager": {"hair": (101, 67, 33), "shirt": (200, 100, 50), "pants": (50, 50, 100)},
+            "Farmer": {"hair": (139, 69, 19), "shirt": (100, 150, 50), "pants": (101, 67, 33)},
+            "Child": {"hair": (255, 215, 0), "shirt": (255, 100, 100), "pants": (0, 0, 200)},
+            "Old Woman": {"hair": (150, 150, 150), "shirt": (100, 0, 100), "pants": (50, 50, 50)}
         }
         
         color = colors.get(name, {"hair": (139, 69, 19), "shirt": (200, 0, 0), "pants": (0, 0, 200)})
@@ -37,6 +47,24 @@ class NPC(pygame.sprite.Sprite):
         pygame.draw.rect(self.image, (255, 220, 177), (26, 18, 6, 16)) # Right arm
         
         self.rect = self.image.get_rect(center=(x, y))
+    
+    def update(self):
+        # Simple wandering behavior for some NPCs
+        if self.name in ["Villager", "Child"]:
+            self.wander_timer += 1
+            
+            if self.wander_timer > 120:  # Change direction every 2 seconds
+                self.wander_direction = random.choice([(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)])
+                self.wander_timer = 0
+            
+            # Move slightly
+            new_x = self.rect.x + self.wander_direction[0] * self.wander_speed
+            new_y = self.rect.y + self.wander_direction[1] * self.wander_speed
+            
+            # Keep within bounds of original position
+            if abs(new_x - self.original_x) < 50 and abs(new_y - self.original_y) < 50:
+                self.rect.x = new_x
+                self.rect.y = new_y
 
 class QuestGiver(NPC):
     def __init__(self, name, x, y, dialogues, quest_id, quest_requirements):
@@ -63,9 +91,14 @@ class Item(pygame.sprite.Sprite):
         if item_type == "herb":
             pygame.draw.rect(self.image, (0, 200, 0), (6, 8, 4, 8))    # Stem
             pygame.draw.rect(self.image, (0, 255, 0), (2, 2, 12, 6))   # Leaves
+            pygame.draw.rect(self.image, (255, 255, 0), (4, 4, 8, 2))  # Flower
         elif item_type == "coin":
             pygame.draw.circle(self.image, (255, 215, 0), (8, 8), 6)   # Gold coin
             pygame.draw.circle(self.image, (255, 255, 0), (8, 8), 4)   # Inner shine
+        elif item_type == "potion":
+            pygame.draw.rect(self.image, (100, 50, 150), (4, 2, 8, 12))  # Bottle
+            pygame.draw.rect(self.image, (255, 0, 100), (5, 4, 6, 8))    # Liquid
+            pygame.draw.rect(self.image, (101, 67, 33), (6, 1, 4, 3))    # Cork
         
         self.rect = self.image.get_rect(center=(x, y))
 

@@ -1,12 +1,13 @@
 import pygame
 
 class Menu:
-    def __init__(self, screen, font, small_font, screen_width, screen_height):
+    def __init__(self, screen, font, small_font, screen_width, screen_height, audio_manager):
         self.screen = screen
         self.font = font
         self.small_font = small_font
         self.screen_width = screen_width
         self.screen_height = screen_height
+        self.audio_manager = audio_manager
         self.options = ["Start", "Controller", "Settings", "Exit"]
         self.selected_option_index = 0
 
@@ -79,6 +80,7 @@ class Menu:
             pygame.draw.line(self.screen, (34, 139, 34), (grass_x, y), (grass_x, y - 10), 2)
 
     def navigate(self, direction):
+        self.audio_manager.play_sound("menu_select")
         self.selected_option_index += direction
         if self.selected_option_index < 0:
             self.selected_option_index = len(self.options) - 1
