@@ -1,5 +1,5 @@
 import pygame
-
+import random
 class Wall(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height, wall_type="stone"):
         super().__init__()
