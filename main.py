@@ -1,91 +1,98 @@
 import pygame
 import sys
 from player import Player
+from environment import Environment
+from entity import Door, Ghost
 from audio import AudioManager
-from visuals import draw_environment
-from entity import Ghost
-from environment import Door, check_collision
+from visuals import Visuals
 
-# Inisialisasi pygame
+# Init
 pygame.init()
-screen = pygame.display.set_mode((800, 600))
-clock = pygame.time.Clock()
-font = pygame.font.SysFont(None, 36)
-
-# Warna
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-
-# Objek
-player = Player(100, 100)
 audio_manager = AudioManager()
+SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
+SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Horror Game")
 
+# State
+font = pygame.font.Font(None, 74)
+small_font = pygame.font.Font(None, 50)
+current_game_state = "MENU"
+
+# Player
+player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 100)
+all_sprites = pygame.sprite.Group(player)
+
+# Game objects
 doors = [
-    Door(300, 100, "left"),
-    Door(400, 100, "center"),
-    Door(500, 100, "right")
+    Door("left", 150, 100, correct=False),
+    Door("center", 350, 100, correct=True),
+    Door("right", 550, 100, correct=False)
 ]
+all_sprites.add(*doors)
 
-ghosts = [Ghost(600, 400)]
+ghost = Ghost(100, 100)
+all_sprites.add(ghost)
 
-# State permainan
-question_mode = False
-question_answered = False
-selected_path = None
-correct_path = "center"
-message = ""
+environment = Environment()
+visuals = Visuals(SCREEN_WIDTH, SCREEN_HEIGHT)
+light_radius = 150
 
-def draw_text(text, x, y):
-    img = font.render(text, True, WHITE)
-    screen.blit(img, (x, y))
+# Scenes
+def draw_menu():
+    SCREEN.fill((0, 0, 0))
+    title = font.render("Horror Game", True, (255, 255, 255))
+    start = small_font.render("Press SPACE to Start", True, (255, 255, 255))
+    SCREEN.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 250))
+    SCREEN.blit(start, (SCREEN_WIDTH // 2 - start.get_width() // 2, 350))
+    pygame.display.flip()
 
-while True:
+def draw_game_over():
+    SCREEN.fill((0, 0, 0))
+    text = font.render("YOU DIED", True, (255, 0, 0))
+    restart = small_font.render("Press R to Restart", True, (255, 255, 255))
+    SCREEN.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 250))
+    SCREEN.blit(restart, (SCREEN_WIDTH // 2 - restart.get_width() // 2, 350))
+    pygame.display.flip()
+
+# Loop
+running = True
+while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
+            running = False
+        elif event.type == pygame.KEYDOWN:
+            if current_game_state == "MENU" and event.key == pygame.K_SPACE:
+                current_game_state = "PLAYING"
+            elif current_game_state == "GAME_OVER" and event.key == pygame.K_r:
+                current_game_state = "PLAYING"
+                player.reset_position()
+                ghost.reset_position()
 
-    keys = pygame.key.get_pressed()
-    player.handle_movement(keys)
+    if current_game_state == "MENU":
+        draw_menu()
 
-    screen.fill(BLACK)
-    draw_environment(screen)
+    elif current_game_state == "PLAYING":
+        player.update()
+        ghost.update(player.rect)
 
-    for door in doors:
-        door.draw(screen)
-
-    for ghost in ghosts:
-        ghost.draw(screen)
-
-    player.draw(screen)
-
-    if not question_mode:
         for door in doors:
-            if check_collision(player, door):
-                question_mode = True
-                message = "Pilih jalan yang benar (Left/Center/Right)"
-                break
-    else:
-        draw_text(message, 200, 300)
+            if player.rect.colliderect(door.rect):
+                if door.correct:
+                    doors.remove(door)
+                    all_sprites.remove(door)
+                    break
+                else:
+                    audio_manager.play_sound("scream")
+                    current_game_state = "GAME_OVER"
 
-        if not question_answered:
-            if keys[pygame.K_l]:
-                selected_path = "left"
-                question_answered = True
-            elif keys[pygame.K_c]:
-                selected_path = "center"
-                question_answered = True
-            elif keys[pygame.K_r]:
-                selected_path = "right"
-                question_answered = True
+        SCREEN.fill((0, 0, 0))
+        environment.draw(SCREEN)
+        all_sprites.draw(SCREEN)
+        visuals.draw_light(SCREEN, player.rect.center, light_radius)
+        pygame.display.flip()
 
-        if question_answered:
-            if selected_path == correct_path:
-                message = "Benar! Jalan terbuka."
-                # Logic buka jalan
-            else:
-                message = "Salah! Kamu mati."
-                # Logic kematian (bisa restart atau quit)
+    elif current_game_state == "GAME_OVER":
+        draw_game_over()
 
-    pygame.display.flip()
-    clock.tick(60)
+pygame.quit()
+sys.exit()

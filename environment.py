@@ -13,18 +13,10 @@ class Wall(pygame.sprite.Sprite):
 
 class Environment:
     def __init__(self):
-        self.wall_list = pygame.sprite.Group()
-        # Create a simple room
-        # Top wall
-        self.wall_list.add(Wall(50, 50, 700, 20))
-        # Bottom wall
-        self.wall_list.add(Wall(50, 550, 700, 20))
-        # Left wall
-        self.wall_list.add(Wall(50, 70, 20, 480))
-        # Right wall
-        self.wall_list.add(Wall(730, 70, 20, 480))
+        self.wall_list = [] # Tambah objek tembok di sini jika ada
 
     def draw(self, screen):
-        self.wall_list.draw(screen)
+        # Tambah tembok jika ingin
+        pass
 
 
