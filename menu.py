@@ -8,7 +8,7 @@ class Menu:
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.audio_manager = audio_manager
-        self.options = ["Start", "Controller", "Settings", "Exit"]
+        self.options = ["Start", "Load Game", "Controller", "Settings", "Exit"]
         self.selected_option_index = 0
 
     def draw_menu(self):

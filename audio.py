@@ -10,7 +10,8 @@ class AudioManager:
                 "quest_complete": None,
                 "item_pickup": None,
                 "footstep": None,
-                "menu_select": None
+                "menu_select": None,
+                "ghost_hit": None
             }
             self._create_sounds()
         except:
@@ -25,6 +26,7 @@ class AudioManager:
             self.sounds["quest_complete"] = self._create_simple_beep(660, 300)
             self.sounds["item_pickup"] = self._create_simple_beep(880, 150)
             self.sounds["menu_select"] = self._create_simple_beep(550, 100)
+            self.sounds["ghost_hit"] = self._create_simple_beep(220, 500)
             
         except:
             print("[WARNING] Could not create programmatic sounds")

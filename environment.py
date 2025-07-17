@@ -83,7 +83,10 @@ class Environment:
         self.walls = pygame.sprite.Group()
         self.decorations = pygame.sprite.Group()
         self.current_area = "village"
+        self.cave_entrance = None
         self._load_village()
+        self._load_forest()
+        self._load_cave()
 
     def _load_village(self):
         # Village boundaries
@@ -127,10 +130,56 @@ class Environment:
             collision_rect = pygame.Rect(tree.rect.centerx - 15, tree.rect.centery - 10, 30, 20)
             collision_wall = Wall(collision_rect.x, collision_rect.y, collision_rect.width, collision_rect.height)
             self.walls.add(collision_wall)
+
+    def _load_forest(self):
+        # Forest trees (more dense)
+        forest_trees = []
+        for i in range(20):
+            tree_x = random.randint(1000, 1500)
+            tree_y = random.randint(200, 500)
+            tree_type = random.choice(["oak", "pine"])
+            tree = Tree(tree_x, tree_y, tree_type)
+            forest_trees.append(tree)
+            self.decorations.add(tree)
+            
+            # Add collision
+            collision_rect = pygame.Rect(tree.rect.centerx - 15, tree.rect.centery - 10, 30, 20)
+            collision_wall = Wall(collision_rect.x, collision_rect.y, collision_rect.width, collision_rect.height)
+            self.walls.add(collision_wall)
         
-        # Forest area walls
-        self.walls.add(Wall(50, 50, 200, 20, "wood"))   # Forest entrance
-        self.walls.add(Wall(1200, 100, 20, 300, "wood"))  # Forest boundary
+        # Cave entrance
+        cave_entrance = pygame.sprite.Sprite()
+        cave_entrance.image = pygame.Surface((100, 80))
+        cave_entrance.image.fill((50, 50, 50))  # Dark cave entrance
+        pygame.draw.ellipse(cave_entrance.image, (20, 20, 20), (10, 20, 80, 60))
+        cave_entrance.rect = cave_entrance.image.get_rect(center=(1400, 100))
+        self.decorations.add(cave_entrance)
+        self.cave_entrance = cave_entrance
+        
+        # Forest boundaries
+        self.walls.add(Wall(900, 0, 20, 600, "wood"))    # Forest entrance
+        self.walls.add(Wall(1580, 0, 20, 600, "wood"))   # Forest boundary
+
+    def _load_cave(self):
+        # Cave walls and decorations
+        if self.current_area == "cave":
+            # Cave boundaries
+            self.walls.add(Wall(0, 0, 1600, 20, "stone"))      # Top
+            self.walls.add(Wall(0, 580, 1600, 20, "stone"))    # Bottom
+            self.walls.add(Wall(0, 0, 20, 600, "stone"))       # Left
+            self.walls.add(Wall(1580, 0, 20, 600, "stone"))    # Right
+            
+            # Cave rocks and obstacles
+            for i in range(15):
+                rock_x = random.randint(100, 1500)
+                rock_y = random.randint(100, 500)
+                rock = pygame.sprite.Sprite()
+                rock.image = pygame.Surface((40, 30))
+                rock.image.fill((80, 80, 80))
+                pygame.draw.ellipse(rock.image, (60, 60, 60), (5, 5, 30, 20))
+                rock.rect = rock.image.get_rect(center=(rock_x, rock_y))
+                self.decorations.add(rock)
+                self.walls.add(Wall(rock.rect.x, rock.rect.y, rock.rect.width, rock.rect.height))
         
         # Village well (as decoration)
         well = pygame.sprite.Sprite()
@@ -171,6 +220,12 @@ class Environment:
         return self.walls
 
     def draw(self, screen, camera_x=0, camera_y=0):
+        # Different background for different areas
+        if self.current_area == "cave":
+            screen.fill((30, 30, 30))  # Dark cave background
+        else:
+            screen.fill((34, 139, 34))  # Grass background
+            
         # Draw decorations first (background)
         for decoration in self.decorations:
             screen_x = decoration.rect.x - camera_x
@@ -188,3 +243,7 @@ class Environment:
 
     def reset_levels(self):
         self.current_area = "village"
+        self.walls.empty()
+        self.decorations.empty()
+        self._load_village()
+        self._load_forest()

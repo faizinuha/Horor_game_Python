@@ -1,5 +1,6 @@
 import pygame
 import random
+import math
 
 class NPC(pygame.sprite.Sprite):
     def __init__(self, name, x, y, dialogues):
@@ -129,3 +130,61 @@ class Chest(pygame.sprite.Sprite):
             pygame.draw.rect(self.image, (101, 67, 33), (0, -4, 32, 8))  # Lid opened
             return self.contents
         return []
+class Ghost(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.original_x = x
+        self.original_y = y
+        
+        # Create ghost sprite
+        self.image = pygame.Surface((32, 48))
+        self.image.fill((0, 255, 0))
+        self.image.set_colorkey((0, 255, 0))
+        
+        # Ghost body (semi-transparent white)
+        pygame.draw.ellipse(self.image, (200, 200, 255), (4, 16, 24, 32))
+        pygame.draw.circle(self.image, (200, 200, 255), (16, 16), 12)
+        
+        # Ghost eyes
+        pygame.draw.circle(self.image, (0, 0, 0), (12, 12), 3)
+        pygame.draw.circle(self.image, (0, 0, 0), (20, 12), 3)
+        
+        # Ghost mouth
+        pygame.draw.ellipse(self.image, (0, 0, 0), (14, 18, 4, 6))
+        
+        self.rect = self.image.get_rect(center=(x, y))
+        self.speed = 1
+        self.float_timer = 0
+        self.chase_range = 150
+        self.patrol_range = 100
+        
+    def update(self, player_pos):
+        # Calculate distance to player
+        dx = player_pos[0] - self.rect.centerx
+        dy = player_pos[1] - self.rect.centery
+        distance = math.sqrt(dx*dx + dy*dy)
+        
+        # Floating animation
+        self.float_timer += 0.1
+        float_offset = math.sin(self.float_timer) * 2
+        
+        if distance < self.chase_range:
+            # Chase player
+            if distance > 0:
+                self.rect.x += (dx / distance) * self.speed
+                self.rect.y += (dy / distance) * self.speed + float_offset
+        else:
+            # Patrol around original position
+            patrol_dx = self.original_x - self.rect.centerx
+            patrol_dy = self.original_y - self.rect.centery
+            patrol_distance = math.sqrt(patrol_dx*patrol_dx + patrol_dy*patrol_dy)
+            
+            if patrol_distance > self.patrol_range:
+                # Return to original position
+                if patrol_distance > 0:
+                    self.rect.x += (patrol_dx / patrol_distance) * (self.speed * 0.5)
+                    self.rect.y += (patrol_dy / patrol_distance) * (self.speed * 0.5) + float_offset
+            else:
+                # Random movement within patrol range
+                self.rect.x += random.randint(-1, 1)
+                self.rect.y += random.randint(-1, 1) + float_offset
