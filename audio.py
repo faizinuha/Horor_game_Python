@@ -1,24 +1,37 @@
-
 import pygame
+import os
 
 class AudioManager:
     def __init__(self):
-        pygame.mixer.init()
-        self.sounds = {
-            "creak": pygame.mixer.Sound("horror_game/audio/creaking_door.wav"),
-            "whisper": pygame.mixer.Sound("horror_game/audio/whisper.wav"),
-            # Add more sounds here
-        }
+        # Gunakan dummy audio jika error
+        try:
+            pygame.mixer.init()
+            self.audio_disabled = False
+        except pygame.error as e:
+            print(f"[WARNING] Audio disabled: {e}")
+            os.environ["SDL_AUDIODRIVER"] = "dummy"
+            self.audio_disabled = True
+            return
+
+        # Load sound hanya jika audio tersedia
+        self.sounds = {}
+        try:
+            self.sounds = {
+                "creak": pygame.mixer.Sound("audio/creaking_door.wav"),
+                "whisper": pygame.mixer.Sound("audio/whisper.wav"),
+            }
+        except pygame.error as e:
+            print(f"[WARNING] Failed loading sounds: {e}")
 
     def play_sound(self, sound_name):
-        if sound_name in self.sounds:
+        if not self.audio_disabled and sound_name in self.sounds:
             self.sounds[sound_name].play()
 
     def play_music(self, music_path, loop=-1):
-        pygame.mixer.music.load(music_path)
-        pygame.mixer.music.play(loop)
+        if not self.audio_disabled:
+            pygame.mixer.music.load(music_path)
+            pygame.mixer.music.play(loop)
 
     def stop_music(self):
-        pygame.mixer.music.stop()
-
-
+        if not self.audio_disabled:
+            pygame.mixer.music.stop()
