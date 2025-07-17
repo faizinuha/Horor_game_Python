@@ -1,4 +1,3 @@
-
 import pygame
 import sys
 from player import Player
@@ -83,13 +82,15 @@ def draw_settings_menu():
 
 # Loop
 running = True
+clock = pygame.time.Clock()
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.KEYDOWN:
             if current_game_state == "MENU":
-                if event.key == pygame.K_SPACE:
+                if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
                     selected_option = menu.get_selected_option()
                     if selected_option == "Start":
                         current_game_state = "INTRO_SEQUENCE"
@@ -100,22 +101,35 @@ while running:
                         current_game_state = "SETTINGS"
                     elif selected_option == "Exit":
                         running = False
-                elif event.key == pygame.K_UP:
+                elif event.key == pygame.K_UP or event.key == pygame.K_w:
                     menu.navigate(-1)
-                elif event.key == pygame.K_DOWN:
+                elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
                     menu.navigate(1)
-            elif current_game_state == "GAME_OVER" and event.key == pygame.K_r:
-                current_game_state = "PLAYING"
-                player.reset_position()
-                ghost.reset_position()
-                environment.reset_levels()
-            elif event.key == pygame.K_RETURN and dialogue_box.visible:
-                if dialogue_box.next_dialogue():
-                    pass
-            elif current_game_state == "CONTROLLER_INFO" and event.key == pygame.K_ESCAPE:
-                current_game_state = "MENU"
-            elif current_game_state == "SETTINGS" and event.key == pygame.K_ESCAPE:
-                current_game_state = "MENU"
+            
+            elif current_game_state == "GAME_OVER":
+                if event.key == pygame.K_r:
+                    current_game_state = "PLAYING"
+                    player.reset_position()
+                    ghost.reset_position()
+                    environment.reset_levels()
+            
+            elif current_game_state == "PLAYING":
+                # Handle dialogue progression
+                if dialogue_box.visible and (event.key == pygame.K_RETURN or event.key == pygame.K_SPACE):
+                    dialogue_box.next_dialogue()
+            
+            elif current_game_state == "INTRO_SEQUENCE":
+                # Handle dialogue progression during intro
+                if dialogue_box.visible and (event.key == pygame.K_RETURN or event.key == pygame.K_SPACE):
+                    dialogue_box.next_dialogue()
+            
+            elif current_game_state == "CONTROLLER_INFO":
+                if event.key == pygame.K_ESCAPE:
+                    current_game_state = "MENU"
+            
+            elif current_game_state == "SETTINGS":
+                if event.key == pygame.K_ESCAPE:
+                    current_game_state = "MENU"
 
     if current_game_state == "MENU":
         menu.draw_menu()
@@ -141,28 +155,30 @@ while running:
         pygame.display.flip()
 
     elif current_game_state == "PLAYING":
-        player.update(environment.get_current_walls())
-        ghost.update(player.rect)
+        # Only update player and game logic if dialogue is not visible
+        if not dialogue_box.visible:
+            player.update(environment.get_current_walls())
+            ghost.update(player.rect)
 
-        # Check for level completion (e.g., all doors opened, or reaching an exit)
-        # For now, let's assume reaching the top of the screen advances the level
-        if player.rect.y < 50: # Example condition for level completion
-            if environment.next_level():
-                player.reset_position() # Reset player for new level
-                ghost.reset_position() # Reset ghost for new level
-            else:
-                # All levels completed, maybe a win screen or restart
-                current_game_state = "GAME_OVER" # For now, go to game over
-
-        for door in doors:
-            if player.rect.colliderect(door.rect):
-                if door.correct:
-                    doors.remove(door)
-                    all_sprites.remove(door)
-                    break
+            # Check for level completion (e.g., all doors opened, or reaching an exit)
+            # For now, let's assume reaching the top of the screen advances the level
+            if player.rect.y < 50: # Example condition for level completion
+                if environment.next_level():
+                    player.reset_position() # Reset player for new level
+                    ghost.reset_position() # Reset ghost for new level
                 else:
-                    audio_manager.play_sound("scream")
-                    current_game_state = "GAME_OVER"
+                    # All levels completed, maybe a win screen or restart
+                    current_game_state = "GAME_OVER" # For now, go to game over
+
+            for door in doors:
+                if player.rect.colliderect(door.rect):
+                    if door.correct:
+                        doors.remove(door)
+                        all_sprites.remove(door)
+                        break
+                    else:
+                        audio_manager.play_sound("scream")
+                        current_game_state = "GAME_OVER"
 
         SCREEN.fill((0, 0, 0))
         environment.draw(SCREEN)
@@ -175,13 +191,12 @@ while running:
         draw_game_over()
 
     elif current_game_state == "CONTROLLER_INFO":
-        
         draw_controller_info()
 
     elif current_game_state == "SETTINGS":
         draw_settings_menu()
 
+    clock.tick(60)  # Limit to 60 FPS
+
 pygame.quit()
 sys.exit()
-
-

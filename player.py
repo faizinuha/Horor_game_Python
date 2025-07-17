@@ -12,12 +12,17 @@ class Player(pygame.sprite.Sprite):
 
     def update(self, walls=None):
         old_x, old_y = self.rect.x, self.rect.y
+        dx, dy = 0, 0
 
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]: dx = -self.speed
-        if keys[pygame.K_RIGHT]: dx = self.speed
-        if keys[pygame.K_UP]: dy = -self.speed
-        if keys[pygame.K_DOWN]: dy = self.speed
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]: 
+            dx = -self.speed
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]: 
+            dx = self.speed
+        if keys[pygame.K_UP] or keys[pygame.K_w]: 
+            dy = -self.speed
+        if keys[pygame.K_DOWN] or keys[pygame.K_s]: 
+            dy = self.speed
 
         # Move horizontally and check for collisions
         self.rect.x += dx
@@ -55,8 +60,10 @@ class Player(pygame.sprite.Sprite):
                             break
                     
                     # Vertical movement check
-                    if keys[pygame.K_UP]: self.rect.y -= self.speed
-                    if keys[pygame.K_DOWN]: self.rect.y += self.speed
+                    if keys[pygame.K_UP] or keys[pygame.K_w]: 
+                        self.rect.y -= self.speed
+                    if keys[pygame.K_DOWN] or keys[pygame.K_s]: 
+                        self.rect.y += self.speed
                     for wall_v in walls:
                         if self.rect.colliderect(wall_v.rect):
                             self.rect.y = old_y
