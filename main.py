@@ -1,3 +1,4 @@
+
 import pygame
 import sys
 from player import Player
@@ -5,6 +6,8 @@ from environment import Environment
 from entity import Door, Ghost
 from audio import AudioManager
 from visuals import Visuals
+from menu import Menu
+from dialogue import DialogueBox
 
 # Init
 pygame.init()
@@ -17,6 +20,12 @@ pygame.display.set_caption("Horror Game")
 font = pygame.font.Font(None, 74)
 small_font = pygame.font.Font(None, 50)
 current_game_state = "MENU"
+
+# Menu setup
+menu = Menu(SCREEN, font, small_font, SCREEN_WIDTH, SCREEN_HEIGHT)
+
+# Dialogue setup
+dialogue_box = DialogueBox(SCREEN, small_font, SCREEN_WIDTH, SCREEN_HEIGHT)
 
 # Player
 player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 100)
@@ -37,15 +46,11 @@ environment = Environment()
 visuals = Visuals(SCREEN_WIDTH, SCREEN_HEIGHT)
 light_radius = 150
 
-# Scenes
-def draw_menu():
-    SCREEN.fill((0, 0, 0))
-    title = font.render("Horror Game", True, (255, 255, 255))
-    start = small_font.render("Press SPACE to Start", True, (255, 255, 255))
-    SCREEN.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 250))
-    SCREEN.blit(start, (SCREEN_WIDTH // 2 - start.get_width() // 2, 350))
-    pygame.display.flip()
+# Intro sequence variables
+intro_sequence_active = False
+intro_target_y = SCREEN_HEIGHT - 200 # Player moves up a bit
 
+# Scenes
 def draw_game_over():
     SCREEN.fill((0, 0, 0))
     text = font.render("YOU DIED", True, (255, 0, 0))
@@ -62,17 +67,42 @@ while running:
             running = False
         elif event.type == pygame.KEYDOWN:
             if current_game_state == "MENU" and event.key == pygame.K_SPACE:
-                current_game_state = "PLAYING"
+                current_game_state = "INTRO_SEQUENCE"
+                intro_sequence_active = True
             elif current_game_state == "GAME_OVER" and event.key == pygame.K_r:
                 current_game_state = "PLAYING"
                 player.reset_position()
                 ghost.reset_position()
+            elif event.key == pygame.K_RETURN and dialogue_box.visible:
+                if dialogue_box.next_dialogue():
+                    # Dialogue ended, start game or next phase
+                    pass # Game will continue normally after dialogue
 
     if current_game_state == "MENU":
-        draw_menu()
+        menu.draw_menu()
+
+    elif current_game_state == "INTRO_SEQUENCE":
+        if player.rect.y > intro_target_y:
+            player.rect.y -= player.speed # Move player up
+        else:
+            if intro_sequence_active:
+                dialogue_box.set_dialogues([
+                    "Where am I?",
+                    "This place... it feels wrong.",
+                    "I need to get out of here."
+                ])
+                intro_sequence_active = False
+            current_game_state = "PLAYING" # Transition to playing after intro movement and dialogue setup
+
+        SCREEN.fill((0, 0, 0))
+        environment.draw(SCREEN)
+        all_sprites.draw(SCREEN)
+        visuals.draw_light(SCREEN, player.rect.center, light_radius)
+        dialogue_box.draw()
+        pygame.display.flip()
 
     elif current_game_state == "PLAYING":
-        player.update()
+        player.update(environment.wall_list)
         ghost.update(player.rect)
 
         for door in doors:
@@ -89,6 +119,7 @@ while running:
         environment.draw(SCREEN)
         all_sprites.draw(SCREEN)
         visuals.draw_light(SCREEN, player.rect.center, light_radius)
+        dialogue_box.draw()
         pygame.display.flip()
 
     elif current_game_state == "GAME_OVER":
@@ -96,3 +127,5 @@ while running:
 
 pygame.quit()
 sys.exit()
+
+
