@@ -9,16 +9,10 @@ class Player(pygame.sprite.Sprite):
         self.speed = 4
         self.original_x = x
         self.original_y = y
-<<<<<<< HEAD
 
     def update(self, walls=None):
         old_x, old_y = self.rect.x, self.rect.y
 
-=======
-
-    def update(self, walls=None):
-        dx, dy = 0, 0
->>>>>>> 521db75eeebef683aef995afc4fd1073e78d107c
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]: dx = -self.speed
         if keys[pygame.K_RIGHT]: dx = self.speed
@@ -45,7 +39,6 @@ class Player(pygame.sprite.Sprite):
                     elif dy < 0:  # Moving up, hit the bottom side of the wall
                         self.rect.top = wall.rect.bottom
 
-<<<<<<< HEAD
         if walls:
             for wall in walls:
                 if self.rect.colliderect(wall.rect):
@@ -69,8 +62,6 @@ class Player(pygame.sprite.Sprite):
                             self.rect.y = old_y
                             break
 
-=======
->>>>>>> 521db75eeebef683aef995afc4fd1073e78d107c
     def reset_position(self):
         self.rect.center = (self.original_x, self.original_y)
 

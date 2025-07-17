@@ -8,16 +8,12 @@ class Menu:
         self.small_font = small_font
         self.screen_width = screen_width
         self.screen_height = screen_height
-<<<<<<< HEAD
         self.options = ["Start", "Controller", "Settings", "Exit"]
         self.selected_option_index = 0
-=======
->>>>>>> 521db75eeebef683aef995afc4fd1073e78d107c
 
     def draw_menu(self):
         self.screen.fill((0, 0, 0))
         title = self.font.render("Horror Game", True, (255, 255, 255))
-<<<<<<< HEAD
         self.screen.blit(title, (self.screen_width // 2 - title.get_width() // 2, 150))
 
         for i, option in enumerate(self.options):
@@ -40,11 +36,4 @@ class Menu:
     def get_selected_option(self):
         return self.options[self.selected_option_index]
 
-=======
-        start = self.small_font.render("Press SPACE to Start", True, (255, 255, 255))
-        self.screen.blit(title, (self.screen_width // 2 - title.get_width() // 2, 250))
-        self.screen.blit(start, (self.screen_width // 2 - start.get_width() // 2, 350))
-        pygame.display.flip()
-
->>>>>>> 521db75eeebef683aef995afc4fd1073e78d107c
 

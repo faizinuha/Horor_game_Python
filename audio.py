@@ -5,7 +5,7 @@ class AudioManager:
         try:
             pygame.mixer.init()
             self.sounds = {
-                "scream": pygame.mixer.Sound("audio/scream.wav"),
+                "scream": pygame.mixer.Sound("audio/whisper.wav.wav"),
             }
         except:
             print("[WARNING] Audio disabled: Error loading sounds")

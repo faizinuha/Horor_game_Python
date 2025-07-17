@@ -88,7 +88,6 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.KEYDOWN:
-<<<<<<< HEAD
             if current_game_state == "MENU":
                 if event.key == pygame.K_SPACE:
                     selected_option = menu.get_selected_option()
@@ -105,16 +104,10 @@ while running:
                     menu.navigate(-1)
                 elif event.key == pygame.K_DOWN:
                     menu.navigate(1)
-=======
-            if current_game_state == "MENU" and event.key == pygame.K_SPACE:
-                current_game_state = "INTRO_SEQUENCE"
-                intro_sequence_active = True
->>>>>>> 521db75eeebef683aef995afc4fd1073e78d107c
             elif current_game_state == "GAME_OVER" and event.key == pygame.K_r:
                 current_game_state = "PLAYING"
                 player.reset_position()
                 ghost.reset_position()
-<<<<<<< HEAD
                 environment.reset_levels()
             elif event.key == pygame.K_RETURN and dialogue_box.visible:
                 if dialogue_box.next_dialogue():
@@ -123,23 +116,13 @@ while running:
                 current_game_state = "MENU"
             elif current_game_state == "SETTINGS" and event.key == pygame.K_ESCAPE:
                 current_game_state = "MENU"
-=======
-            elif event.key == pygame.K_RETURN and dialogue_box.visible:
-                if dialogue_box.next_dialogue():
-                    # Dialogue ended, start game or next phase
-                    pass # Game will continue normally after dialogue
->>>>>>> 521db75eeebef683aef995afc4fd1073e78d107c
 
     if current_game_state == "MENU":
         menu.draw_menu()
 
     elif current_game_state == "INTRO_SEQUENCE":
         if player.rect.y > intro_target_y:
-<<<<<<< HEAD
             player.rect.y -= player.speed
-=======
-            player.rect.y -= player.speed # Move player up
->>>>>>> 521db75eeebef683aef995afc4fd1073e78d107c
         else:
             if intro_sequence_active:
                 dialogue_box.set_dialogues([
@@ -148,11 +131,7 @@ while running:
                     "I need to get out of here."
                 ])
                 intro_sequence_active = False
-<<<<<<< HEAD
             current_game_state = "PLAYING"
-=======
-            current_game_state = "PLAYING" # Transition to playing after intro movement and dialogue setup
->>>>>>> 521db75eeebef683aef995afc4fd1073e78d107c
 
         SCREEN.fill((0, 0, 0))
         environment.draw(SCREEN)
@@ -162,11 +141,7 @@ while running:
         pygame.display.flip()
 
     elif current_game_state == "PLAYING":
-<<<<<<< HEAD
         player.update(environment.get_current_walls())
-=======
-        player.update(environment.wall_list)
->>>>>>> 521db75eeebef683aef995afc4fd1073e78d107c
         ghost.update(player.rect)
 
         # Check for level completion (e.g., all doors opened, or reaching an exit)
@@ -200,6 +175,7 @@ while running:
         draw_game_over()
 
     elif current_game_state == "CONTROLLER_INFO":
+        
         draw_controller_info()
 
     elif current_game_state == "SETTINGS":
