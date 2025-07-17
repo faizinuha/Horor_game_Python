@@ -1,131 +1,127 @@
-
 import pygame
-import sys
-import random
-from player import Player
-from environment import Environment
-from entity import Entity
 from audio import AudioManager
-from visuals import Visuals
+from player import Player
+from entity import Ghost
+from environment import Environment
 
-# Initialize Pygame
 pygame.init()
 
-# Audio Manager
-audio_manager = AudioManager()
-
-# Screen dimensions
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+# Window setup
+SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
 SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Minimal Horror Game")
+pygame.display.set_caption("Horor Game - Jalan Tiga Takdir")
+
+# Font
+font = pygame.font.SysFont("Arial", 36)
+small_font = pygame.font.SysFont("Arial", 24)
 
 # Colors
-BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (180, 0, 0)
 
 # Game states
 GAME_STATE_MENU = 0
 GAME_STATE_PLAYING = 1
 GAME_STATE_GAME_OVER = 2
+GAME_STATE_CHOICE = 3
 
 current_game_state = GAME_STATE_MENU
 
-# Fonts
-font = pygame.font.Font(None, 74)
-small_font = pygame.font.Font(None, 50)
+# Audio
+try:
+    audio_manager = AudioManager()
+    audio_manager.play_music("bg_music.mp3")
+except Exception as e:
+    print(f"[WARNING] Audio disabled: {e}")
 
-# Player setup
-player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
-all_sprites = pygame.sprite.Group()
-all_sprites.add(player)
-
-# Environment setup
+# Player & Entities
+player = Player()
+entity = Ghost()
 environment = Environment()
 
-# Entity setup
-entity = Entity(100, 100) # Initial position for the entity
-all_sprites.add(entity)
+clock = pygame.time.Clock()
+running = True
 
-# Visuals setup
-visuals = Visuals(SCREEN_WIDTH, SCREEN_HEIGHT)
-light_radius = 150 # Initial light radius
+def draw_text(text, x, y, size=36, color=WHITE):
+    f = pygame.font.SysFont("Arial", size)
+    t = f.render(text, True, color)
+    SCREEN.blit(t, (x, y))
 
 def draw_menu():
     SCREEN.fill(BLACK)
-    title_text = font.render("Minimal Horror Game", True, WHITE)
-    start_text = small_font.render("Press SPACE to Start", True, WHITE)
-    SCREEN.blit(title_text, (SCREEN_WIDTH // 2 - title_text.get_width() // 2, SCREEN_HEIGHT // 2 - 50))
-    SCREEN.blit(start_text, (SCREEN_WIDTH // 2 - start_text.get_width() // 2, SCREEN_HEIGHT // 2 + 50))
+    draw_text("👻 HOROR GAME - PILIH JALANMU", 120, 100)
+    draw_text("Tekan [SPACE] untuk mulai", 220, 300, 28)
     pygame.display.flip()
 
 def draw_game_over():
     SCREEN.fill(BLACK)
-    game_over_text = font.render("GAME OVER", True, WHITE)
-    restart_text = small_font.render("Press R to Restart", True, WHITE)
-    SCREEN.blit(game_over_text, (SCREEN_WIDTH // 2 - game_over_text.get_width() // 2, SCREEN_HEIGHT // 2 - 50))
-    SCREEN.blit(restart_text, (SCREEN_WIDTH // 2 - restart_text.get_width() // 2, SCREEN_HEIGHT // 2 + 50))
+    draw_text("💀 GAME OVER 💀", 280, 200, 48, RED)
+    draw_text("Tekan [R] untuk kembali ke menu", 180, 350, 24)
     pygame.display.flip()
 
-# Game loop
-running = True
+def draw_choice():
+    SCREEN.fill(BLACK)
+    draw_text("⚠️ Persimpangan Jalan ⚠️", 240, 100)
+    draw_text("Pilih arah yang benar untuk melanjutkan...", 140, 160, 24)
+    draw_text("1. Kiri (←)", 300, 250, 28)
+    draw_text("2. Tengah (↑)", 300, 310, 28)
+    draw_text("3. Kanan (→)", 300, 370, 28)
+    pygame.display.flip()
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        if event.type == pygame.KEYDOWN:
+
+        elif event.type == pygame.KEYDOWN:
             if current_game_state == GAME_STATE_MENU:
                 if event.key == pygame.K_SPACE:
                     current_game_state = GAME_STATE_PLAYING
+                    player.rect.topleft = (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 80)
+
             elif current_game_state == GAME_STATE_GAME_OVER:
                 if event.key == pygame.K_r:
-                    current_game_state = GAME_STATE_PLAYING # Reset game state to playing
-                    player.rect.x = SCREEN_WIDTH // 2 # Reset player position
-                    player.rect.y = SCREEN_HEIGHT // 2
-                    entity.rect.x = 100 # Reset entity position
-                    entity.rect.y = 100
+                    current_game_state = GAME_STATE_MENU
+
+            elif current_game_state == GAME_STATE_CHOICE:
+                if event.key == pygame.K_1 or event.key == pygame.K_KP1:
+                    try: audio_manager.play_sound("death.mp3")
+                    except: pass
+                    current_game_state = GAME_STATE_GAME_OVER
+                elif event.key == pygame.K_2 or event.key == pygame.K_KP2:
+                    current_game_state = GAME_STATE_PLAYING
+                    player.rect.x = SCREEN_WIDTH // 2
+                    player.rect.y = SCREEN_HEIGHT - 80
+                elif event.key == pygame.K_3 or event.key == pygame.K_KP3:
+                    try: audio_manager.play_sound("scream.mp3")
+                    except: pass
+                    current_game_state = GAME_STATE_GAME_OVER
 
     if current_game_state == GAME_STATE_MENU:
         draw_menu()
+
     elif current_game_state == GAME_STATE_PLAYING:
-        # Update
         player.update()
         entity.update(player.rect)
+        environment.update()
 
-        # Play random sounds
-        if random.randint(0, 500) == 0:
-            audio_manager.play_sound("whisper")
-        if random.randint(0, 300) == 0:
-            audio_manager.play_sound("creak")
-
-        # Collision detection for player and walls
-        for wall in environment.wall_list:
-            if player.rect.colliderect(wall.rect):
-                # Simple collision response: move player back
-                if player.rect.x < wall.rect.x:
-                    player.rect.right = wall.rect.left
-                if player.rect.x > wall.rect.x:
-                    player.rect.left = wall.rect.right
-                if player.rect.y < wall.rect.y:
-                    player.rect.bottom = wall.rect.top
-                if player.rect.y > wall.rect.y:
-                    player.rect.top = wall.rect.bottom
-
-        # Collision detection for player and entity
-        if pygame.sprite.collide_rect(player, entity):
-            current_game_state = GAME_STATE_GAME_OVER
-
-        # Draw
-        SCREEN.fill(BLACK)
+        SCREEN.fill((30, 30, 30))
         environment.draw(SCREEN)
-        all_sprites.draw(SCREEN)
-        visuals.draw_light(SCREEN, player.rect.center, light_radius)
+        player.draw(SCREEN)
+        entity.draw(SCREEN)
         pygame.display.flip()
+
+        # Trigger persimpangan di lokasi tertentu
+        if player.rect.y < 100:
+            current_game_state = GAME_STATE_CHOICE
+
+    elif current_game_state == GAME_STATE_CHOICE:
+        draw_choice()
 
     elif current_game_state == GAME_STATE_GAME_OVER:
         draw_game_over()
 
+    clock.tick(60)
+
 pygame.quit()
-sys.exit()
-
-
