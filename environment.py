@@ -1,37 +1,29 @@
 import pygame
 import random
-from asset_manager import AssetManager
-
 class Wall(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height, wall_type="stone"):
         super().__init__()
-        self.asset_manager = AssetManager()
+        self.image = pygame.Surface([width, height])
         
-        # Try to load wall sprite from assets
-        if wall_type == "medieval_a":
-            self.image = self.asset_manager.get_building_sprite("wall_a", 1)
-        elif wall_type == "medieval_b":
-            self.image = self.asset_manager.get_building_sprite("wall_b", 1)
-        elif wall_type == "medieval_c":
-            self.image = self.asset_manager.get_building_sprite("wall_c", 1)
-        else:
-            # Fallback to generated wall
-            self.image = pygame.Surface([width, height])
-            if wall_type == "stone":
-                self.image.fill((128, 128, 128))
-                # Add stone texture
-                for i in range(0, width, 16):
-                    for j in range(0, height, 16):
-                        pygame.draw.rect(self.image, (100, 100, 100), (i, j, 16, 16), 1)
-            elif wall_type == "wood":
-                self.image.fill((139, 69, 19))
-                # Add wood grain
-                for i in range(0, width, 8):
-                    pygame.draw.line(self.image, (101, 67, 33), (i, 0), (i, height))
-        
-        # Scale if needed
-        if hasattr(self, 'image') and self.image.get_width() != width:
-            self.image = pygame.transform.scale(self.image, (width, height))
+        # Different wall types with pixel art patterns
+        if wall_type == "stone":
+            self.image.fill((128, 128, 128))
+            # Add stone texture
+            for i in range(0, width, 16):
+                for j in range(0, height, 16):
+                    pygame.draw.rect(self.image, (100, 100, 100), (i, j, 16, 16), 1)
+        elif wall_type == "wood":
+            self.image.fill((139, 69, 19))
+            # Add wood grain
+            for i in range(0, width, 8):
+                pygame.draw.line(self.image, (101, 67, 33), (i, 0), (i, height))
+        elif wall_type == "brick":
+            self.image.fill((178, 34, 34))
+            # Add brick pattern
+            for i in range(0, width, 32):
+                for j in range(0, height, 16):
+                    offset = 16 if (j // 16) % 2 else 0
+                    pygame.draw.rect(self.image, (139, 0, 0), (i + offset, j, 30, 14), 1)
         
         self.rect = self.image.get_rect()
         self.rect.x = x
@@ -40,209 +32,119 @@ class Wall(pygame.sprite.Sprite):
 class Tree(pygame.sprite.Sprite):
     def __init__(self, x, y, tree_type="oak"):
         super().__init__()
-        self.asset_manager = AssetManager()
+        self.image = pygame.Surface((48, 64))
+        self.image.fill((0, 255, 0))
+        self.image.set_colorkey((0, 255, 0))
         
-        # Try to load tree sprite from assets
-        if tree_type == "medieval_1":
-            self.image = self.asset_manager.get_environment_sprite("tree", 1)
-        elif tree_type == "medieval_2":
-            self.image = self.asset_manager.get_environment_sprite("tree", 2)
-        else:
-            # Fallback to generated tree
-            self.image = pygame.Surface((64, 80))
-            self.image.fill((0, 255, 0))
-            self.image.set_colorkey((0, 255, 0))
-            
-            if tree_type == "oak":
-                # Tree trunk
-                pygame.draw.rect(self.image, (101, 67, 33), (28, 50, 8, 30))
-                # Tree leaves
-                pygame.draw.circle(self.image, (34, 139, 34), (32, 40), 25)
-                pygame.draw.circle(self.image, (0, 100, 0), (32, 40), 22)
-            elif tree_type == "pine":
-                # Pine trunk
-                pygame.draw.rect(self.image, (101, 67, 33), (30, 55, 4, 25))
-                # Pine leaves (triangular)
-                pygame.draw.polygon(self.image, (0, 100, 0), [(32, 15), (12, 45), (52, 45)])
-                pygame.draw.polygon(self.image, (0, 100, 0), [(32, 25), (16, 55), (48, 55)])
+        if tree_type == "oak":
+            # Tree trunk
+            pygame.draw.rect(self.image, (101, 67, 33), (20, 40, 8, 24))
+            # Tree leaves
+            pygame.draw.circle(self.image, (34, 139, 34), (24, 32), 20)
+            pygame.draw.circle(self.image, (0, 100, 0), (24, 32), 18)
+        elif tree_type == "pine":
+            # Pine trunk
+            pygame.draw.rect(self.image, (101, 67, 33), (22, 45, 4, 19))
+            # Pine leaves (triangular)
+            pygame.draw.polygon(self.image, (0, 100, 0), [(24, 10), (8, 35), (40, 35)])
+            pygame.draw.polygon(self.image, (0, 100, 0), [(24, 20), (12, 45), (36, 45)])
         
         self.rect = self.image.get_rect(center=(x, y))
 
 class House(pygame.sprite.Sprite):
     def __init__(self, x, y, house_type="village"):
         super().__init__()
-        self.asset_manager = AssetManager()
-        
-        # Create house using building components
-        self.image = pygame.Surface((120, 140))
+        self.image = pygame.Surface((80, 100))
         self.image.fill((0, 255, 0))
         self.image.set_colorkey((0, 255, 0))
         
-        # Try to use building assets
-        wall_sprite = self.asset_manager.get_building_sprite("wall_a", 1)
-        roof_sprite = self.asset_manager.get_building_sprite("roof_a", 1)
-        door_sprite = self.asset_manager.get_building_sprite("door", 1)
-        window_sprite = self.asset_manager.get_building_sprite("window", 1)
-        
-        if wall_sprite and wall_sprite.get_width() > 10:
-            # Use asset-based house
-            wall_scaled = pygame.transform.scale(wall_sprite, (100, 80))
-            self.image.blit(wall_scaled, (10, 50))
-            
-            if roof_sprite:
-                roof_scaled = pygame.transform.scale(roof_sprite, (120, 60))
-                self.image.blit(roof_scaled, (0, 0))
-            
-            if door_sprite:
-                door_scaled = pygame.transform.scale(door_sprite, (20, 40))
-                self.image.blit(door_scaled, (50, 90))
-            
-            if window_sprite:
-                window_scaled = pygame.transform.scale(window_sprite, (15, 15))
-                self.image.blit(window_scaled, (25, 70))
-                self.image.blit(window_scaled, (80, 70))
-        else:
-            # Fallback to generated house
-            if house_type == "village":
-                # House walls
-                pygame.draw.rect(self.image, (139, 69, 19), (10, 50, 100, 90))
-                # Roof
-                pygame.draw.polygon(self.image, (178, 34, 34), [(5, 50), (60, 15), (115, 50)])
-                # Door
-                pygame.draw.rect(self.image, (101, 67, 33), (50, 100, 20, 40))
-                # Windows
-                pygame.draw.rect(self.image, (135, 206, 235), (25, 70, 15, 15))
-                pygame.draw.rect(self.image, (135, 206, 235), (80, 70, 15, 15))
-        
-        self.rect = self.image.get_rect(center=(x, y))
-
-class Rock(pygame.sprite.Sprite):
-    def __init__(self, x, y, rock_type=1):
-        super().__init__()
-        self.asset_manager = AssetManager()
-        
-        # Try to load rock sprite from assets
-        self.image = self.asset_manager.get_environment_sprite("rock", rock_type)
-        
-        if not self.image or self.image.get_width() < 10:
-            # Fallback to generated rock
-            self.image = pygame.Surface((40, 30))
-            self.image.fill((0, 255, 0))
-            self.image.set_colorkey((0, 255, 0))
-            pygame.draw.ellipse(self.image, (128, 128, 128), (0, 0, 40, 30))
-            pygame.draw.ellipse(self.image, (100, 100, 100), (5, 5, 30, 20))
-        
-        self.rect = self.image.get_rect(center=(x, y))
-
-class Barrel(pygame.sprite.Sprite):
-    def __init__(self, x, y):
-        super().__init__()
-        self.asset_manager = AssetManager()
-        
-        # Try to load barrel sprite from assets
-        self.image = self.asset_manager.get_environment_sprite("barrel")
-        
-        if not self.image or self.image.get_width() < 10:
-            # Fallback to generated barrel
-            self.image = pygame.Surface((32, 40))
-            self.image.fill((0, 255, 0))
-            self.image.set_colorkey((0, 255, 0))
-            pygame.draw.rect(self.image, (139, 69, 19), (4, 4, 24, 32))
-            pygame.draw.ellipse(self.image, (101, 67, 33), (4, 2, 24, 8))
-            pygame.draw.ellipse(self.image, (101, 67, 33), (4, 32, 24, 8))
+        if house_type == "village":
+            # House walls
+            pygame.draw.rect(self.image, (139, 69, 19), (10, 40, 60, 60))
+            # Roof
+            pygame.draw.polygon(self.image, (178, 34, 34), [(5, 40), (40, 10), (75, 40)])
+            # Door
+            pygame.draw.rect(self.image, (101, 67, 33), (35, 70, 10, 30))
+            # Windows
+            pygame.draw.rect(self.image, (135, 206, 235), (20, 50, 8, 8))
+            pygame.draw.rect(self.image, (135, 206, 235), (52, 50, 8, 8))
+        elif house_type == "large":
+            # Larger house
+            pygame.draw.rect(self.image, (160, 82, 45), (5, 30, 70, 70))
+            pygame.draw.polygon(self.image, (139, 69, 19), [(0, 30), (40, 5), (80, 30)])
+            pygame.draw.rect(self.image, (101, 67, 33), (30, 70, 12, 30))
+            pygame.draw.rect(self.image, (135, 206, 235), (15, 45, 10, 10))
+            pygame.draw.rect(self.image, (135, 206, 235), (55, 45, 10, 10))
         
         self.rect = self.image.get_rect(center=(x, y))
 
 class Environment:
     def __init__(self):
-        self.asset_manager = AssetManager()
         self.walls = pygame.sprite.Group()
         self.decorations = pygame.sprite.Group()
         self.current_area = "village"
         self.cave_entrance = None
-        self.background_layers = []
-        
-        # Load background layers
-        self.load_backgrounds()
         self._load_village()
         self._load_forest()
         self._load_cave()
 
-    def load_backgrounds(self):
-        """Load background layers from assets"""
-        bg_layer_0 = self.asset_manager.get_background_sprite(0)
-        bg_layer_1 = self.asset_manager.get_background_sprite(1)
-        
-        if bg_layer_0 and bg_layer_0.get_width() > 10:
-            self.background_layers.append(bg_layer_0)
-        if bg_layer_1 and bg_layer_1.get_width() > 10:
-            self.background_layers.append(bg_layer_1)
-
     def _load_village(self):
-        # Village boundaries using medieval walls
-        self.walls.add(Wall(0, 0, 1600, 20, "medieval_a"))      # Top
-        self.walls.add(Wall(0, 1180, 1600, 20, "medieval_a"))   # Bottom
-        self.walls.add(Wall(0, 0, 20, 1200, "medieval_a"))      # Left
-        self.walls.add(Wall(1580, 0, 20, 1200, "medieval_a"))   # Right
+        # Village boundaries
+        self.walls.add(Wall(0, 0, 1600, 20, "stone"))      # Top
+        self.walls.add(Wall(0, 1180, 1600, 20, "stone"))   # Bottom
+        self.walls.add(Wall(0, 0, 20, 1200, "stone"))      # Left
+        self.walls.add(Wall(1580, 0, 20, 1200, "stone"))   # Right
         
-        # Village houses using asset-based houses
-        house_positions = [
-            (200, 200), (400, 180), (600, 220),
-            (300, 400), (500, 450), (700, 400)
-        ]
+        # Village houses with collision
+        house1 = House(200, 200, "village")
+        house2 = House(400, 180, "village")
+        house3 = House(600, 220, "village")
+        house4 = House(300, 400, "large")
+        house5 = House(500, 450, "village")
+        house6 = House(700, 400, "large")
         
-        for i, (x, y) in enumerate(house_positions):
-            house = House(x, y, "village")
-            self.decorations.add(house)
-            # Add collision
-            self.walls.add(Wall(house.rect.x + 10, house.rect.y + 40, 
-                              house.rect.width - 20, house.rect.height - 40))
+        self.decorations.add(house1, house2, house3, house4, house5, house6)
         
-        # Trees using asset sprites
-        tree_positions = [
-            (100, 300), (150, 500), (700, 300), (750, 450),
-            (800, 200), (900, 350), (1000, 250), (1100, 400)
-        ]
+        # Add house collision walls
+        self.walls.add(Wall(house1.rect.x, house1.rect.y, house1.rect.width, house1.rect.height))
+        self.walls.add(Wall(house2.rect.x, house2.rect.y, house2.rect.width, house2.rect.height))
+        self.walls.add(Wall(house3.rect.x, house3.rect.y, house3.rect.width, house3.rect.height))
+        self.walls.add(Wall(house4.rect.x, house4.rect.y, house4.rect.width, house4.rect.height))
+        self.walls.add(Wall(house5.rect.x, house5.rect.y, house5.rect.width, house5.rect.height))
+        self.walls.add(Wall(house6.rect.x, house6.rect.y, house6.rect.width, house6.rect.height))
         
-        for i, (x, y) in enumerate(tree_positions):
-            tree_type = "medieval_1" if i % 2 == 0 else "medieval_2"
-            tree = Tree(x, y, tree_type)
-            self.decorations.add(tree)
-            # Add collision (smaller than visual)
-            collision_rect = pygame.Rect(tree.rect.centerx - 20, tree.rect.centery - 15, 40, 30)
-            collision_wall = Wall(collision_rect.x, collision_rect.y, 
-                                collision_rect.width, collision_rect.height)
+        # Trees around village with collision
+        tree1 = Tree(100, 300, "oak")
+        tree2 = Tree(150, 500, "oak")
+        tree3 = Tree(700, 300, "pine")
+        tree4 = Tree(750, 450, "pine")
+        tree5 = Tree(800, 200, "oak")
+        tree6 = Tree(900, 350, "oak")
+        tree7 = Tree(1000, 250, "pine")
+        tree8 = Tree(1100, 400, "oak")
+        
+        self.decorations.add(tree1, tree2, tree3, tree4, tree5, tree6, tree7, tree8)
+        
+        # Add tree collision (smaller than visual)
+        for tree in [tree1, tree2, tree3, tree4, tree5, tree6, tree7, tree8]:
+            collision_rect = pygame.Rect(tree.rect.centerx - 15, tree.rect.centery - 10, 30, 20)
+            collision_wall = Wall(collision_rect.x, collision_rect.y, collision_rect.width, collision_rect.height)
             self.walls.add(collision_wall)
-        
-        # Add barrels and crates using assets
-        barrel_positions = [(250, 350), (450, 320), (650, 380)]
-        for x, y in barrel_positions:
-            barrel = Barrel(x, y)
-            self.decorations.add(barrel)
-            self.walls.add(Wall(barrel.rect.x, barrel.rect.y, 
-                              barrel.rect.width, barrel.rect.height))
-        
-        # Add rocks using asset sprites
-        rock_positions = [(800, 500), (850, 480), (900, 520), (950, 490)]
-        for i, (x, y) in enumerate(rock_positions):
-            rock = Rock(x, y, (i % 5) + 1)
-            self.decorations.add(rock)
-            self.walls.add(Wall(rock.rect.x, rock.rect.y, 
-                              rock.rect.width, rock.rect.height))
 
     def _load_forest(self):
-        # Dense forest with asset-based trees
-        for i in range(25):
+        # Forest trees (more dense)
+        forest_trees = []
+        for i in range(20):
             tree_x = random.randint(1000, 1500)
             tree_y = random.randint(200, 500)
-            tree_type = "medieval_1" if i % 2 == 0 else "medieval_2"
+            tree_type = random.choice(["oak", "pine"])
             tree = Tree(tree_x, tree_y, tree_type)
+            forest_trees.append(tree)
             self.decorations.add(tree)
             
             # Add collision
-            collision_rect = pygame.Rect(tree.rect.centerx - 20, tree.rect.centery - 15, 40, 30)
-            collision_wall = Wall(collision_rect.x, collision_rect.y, 
-                                collision_rect.width, collision_rect.height)
+            collision_rect = pygame.Rect(tree.rect.centerx - 15, tree.rect.centery - 10, 30, 20)
+            collision_wall = Wall(collision_rect.x, collision_rect.y, collision_rect.width, collision_rect.height)
             self.walls.add(collision_wall)
         
         # Cave entrance
@@ -259,7 +161,7 @@ class Environment:
         self.walls.add(Wall(1580, 0, 20, 600, "wood"))   # Forest boundary
 
     def _load_cave(self):
-        # Cave rocks using asset sprites
+        # Cave walls and decorations
         if self.current_area == "cave":
             # Cave boundaries
             self.walls.add(Wall(0, 0, 1600, 20, "stone"))      # Top
@@ -267,57 +169,76 @@ class Environment:
             self.walls.add(Wall(0, 0, 20, 600, "stone"))       # Left
             self.walls.add(Wall(1580, 0, 20, 600, "stone"))    # Right
             
-            # Cave rocks using asset sprites
-            for i in range(20):
+            # Cave rocks and obstacles
+            for i in range(15):
                 rock_x = random.randint(100, 1500)
                 rock_y = random.randint(100, 500)
-                rock_type = (i % 5) + 1
-                rock = Rock(rock_x, rock_y, rock_type)
+                rock = pygame.sprite.Sprite()
+                rock.image = pygame.Surface((40, 30))
+                rock.image.fill((80, 80, 80))
+                pygame.draw.ellipse(rock.image, (60, 60, 60), (5, 5, 30, 20))
+                rock.rect = rock.image.get_rect(center=(rock_x, rock_y))
                 self.decorations.add(rock)
-                self.walls.add(Wall(rock.rect.x, rock.rect.y, 
-                                  rock.rect.width, rock.rect.height))
+                self.walls.add(Wall(rock.rect.x, rock.rect.y, rock.rect.width, rock.rect.height))
+        
+        # Village well (as decoration)
+        well = pygame.sprite.Sprite()
+        well.image = pygame.Surface((32, 32))
+        well.image.fill((128, 128, 128))
+        pygame.draw.circle(well.image, (64, 64, 64), (16, 16), 14)
+        pygame.draw.circle(well.image, (0, 0, 139), (16, 16), 10)
+        well.rect = well.image.get_rect(center=(400, 300))
+        self.decorations.add(well)
+        
+        # Well collision
+        self.walls.add(Wall(well.rect.x, well.rect.y, well.rect.width, well.rect.height))
+        
+        # Add more decorative elements
+        # Fences
+        for i in range(5):
+            fence_x = 250 + i * 40
+            fence = pygame.sprite.Sprite()
+            fence.image = pygame.Surface((8, 32))
+            fence.image.fill((101, 67, 33))
+            fence.rect = fence.image.get_rect(center=(fence_x, 350))
+            self.decorations.add(fence)
+            self.walls.add(Wall(fence.rect.x, fence.rect.y, fence.rect.width, fence.rect.height))
+        
+        # Rocks
+        for i in range(8):
+            rock_x = 800 + i * 60
+            rock_y = 500 + (i % 2) * 30
+            rock = pygame.sprite.Sprite()
+            rock.image = pygame.Surface((24, 16))
+            rock.image.fill((128, 128, 128))
+            pygame.draw.ellipse(rock.image, (100, 100, 100), (2, 2, 20, 12))
+            rock.rect = rock.image.get_rect(center=(rock_x, rock_y))
+            self.decorations.add(rock)
+            self.walls.add(Wall(rock.rect.x, rock.rect.y, rock.rect.width, rock.rect.height))
 
     def get_current_walls(self):
         return self.walls
 
     def draw(self, screen, camera_x=0, camera_y=0):
-        # Draw background layers first
-        if self.background_layers:
-            for i, bg_layer in enumerate(self.background_layers):
-                # Parallax scrolling for background layers
-                parallax_x = camera_x * (0.5 + i * 0.2)
-                parallax_y = camera_y * (0.3 + i * 0.1)
-                
-                # Tile the background
-                bg_width = bg_layer.get_width()
-                bg_height = bg_layer.get_height()
-                
-                start_x = int(-parallax_x % bg_width) - bg_width
-                start_y = int(-parallax_y % bg_height) - bg_height
-                
-                for x in range(start_x, screen.get_width() + bg_width, bg_width):
-                    for y in range(start_y, screen.get_height() + bg_height, bg_height):
-                        screen.blit(bg_layer, (x, y))
+        # Different background for different areas
+        if self.current_area == "cave":
+            screen.fill((30, 30, 30))  # Dark cave background
         else:
-            # Fallback background colors
-            if self.current_area == "cave":
-                screen.fill((30, 30, 30))  # Dark cave background
-            else:
-                screen.fill((34, 139, 34))  # Grass background
+            screen.fill((34, 139, 34))  # Grass background
             
-        # Draw decorations
+        # Draw decorations first (background)
         for decoration in self.decorations:
             screen_x = decoration.rect.x - camera_x
             screen_y = decoration.rect.y - camera_y
-            if -200 < screen_x < screen.get_width() + 200 and -200 < screen_y < screen.get_height() + 200:
+            if -100 < screen_x < 900 and -100 < screen_y < 700:  # Only draw if on screen
                 screen.blit(decoration.image, (screen_x, screen_y))
         
-        # Draw visible boundary walls only
+        # Draw visible walls only (boundaries)
         for wall in self.walls:
             if hasattr(wall, 'image') and wall.image.get_width() > 50:  # Only draw boundary walls
                 screen_x = wall.rect.x - camera_x
                 screen_y = wall.rect.y - camera_y
-                if -200 < screen_x < screen.get_width() + 200 and -200 < screen_y < screen.get_height() + 200:
+                if -100 < screen_x < 900 and -100 < screen_y < 700:
                     screen.blit(wall.image, (screen_x, screen_y))
 
     def reset_levels(self):

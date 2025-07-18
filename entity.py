@@ -1,12 +1,10 @@
 import pygame
 import random
 import math
-from asset_manager import AssetManager
 
 class NPC(pygame.sprite.Sprite):
     def __init__(self, name, x, y, dialogues):
         super().__init__()
-        self.asset_manager = AssetManager()
         self.name = name
         self.dialogues = dialogues
         self.original_x = x
@@ -15,8 +13,8 @@ class NPC(pygame.sprite.Sprite):
         self.wander_direction = random.choice([(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)])
         self.wander_speed = 0.5
         
-        # Create enhanced pixel art NPC
-        self.image = pygame.Surface((48, 64))
+        # Create pixel art NPC
+        self.image = pygame.Surface((32, 48))
         self.image.fill((0, 255, 0))  # Transparent background
         self.image.set_colorkey((0, 255, 0))
         
@@ -36,18 +34,18 @@ class NPC(pygame.sprite.Sprite):
         
         # Draw pixel art NPC
         # Head
-        pygame.draw.rect(self.image, (255, 220, 177), (12, 4, 24, 20))  # Skin
-        pygame.draw.rect(self.image, color["hair"], (8, 4, 32, 12))     # Hair
-        pygame.draw.rect(self.image, (0, 0, 0), (16, 12, 3, 3))        # Left eye
-        pygame.draw.rect(self.image, (0, 0, 0), (29, 12, 3, 3))        # Right eye
+        pygame.draw.rect(self.image, (255, 220, 177), (8, 0, 16, 16))  # Skin
+        pygame.draw.rect(self.image, color["hair"], (6, 0, 20, 8))     # Hair
+        pygame.draw.rect(self.image, (0, 0, 0), (10, 4, 2, 2))        # Left eye
+        pygame.draw.rect(self.image, (0, 0, 0), (20, 4, 2, 2))        # Right eye
         
         # Body
-        pygame.draw.rect(self.image, color["shirt"], (8, 24, 32, 28))  # Shirt
-        pygame.draw.rect(self.image, color["pants"], (4, 52, 40, 12))  # Pants
+        pygame.draw.rect(self.image, color["shirt"], (6, 16, 20, 20))  # Shirt
+        pygame.draw.rect(self.image, color["pants"], (4, 36, 24, 12))  # Pants
         
         # Arms
-        pygame.draw.rect(self.image, (255, 220, 177), (0, 28, 8, 20))  # Left arm
-        pygame.draw.rect(self.image, (255, 220, 177), (40, 28, 8, 20)) # Right arm
+        pygame.draw.rect(self.image, (255, 220, 177), (0, 18, 6, 16))  # Left arm
+        pygame.draw.rect(self.image, (255, 220, 177), (26, 18, 6, 16)) # Right arm
         
         self.rect = self.image.get_rect(center=(x, y))
     
