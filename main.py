@@ -3,6 +3,7 @@ import sys
 import random
 import json
 import os
+from asset_manager import AssetManager
 from player import Player
 from environment import Environment
 from entity import NPC, QuestGiver, Item, Chest, Ghost
@@ -15,6 +16,7 @@ from pause import PauseMenu
 
 # Init
 pygame.init()
+asset_manager = AssetManager()
 audio_manager = AudioManager()
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
 SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))

@@ -5,30 +5,28 @@ class AssetManager:
     def __init__(self):
         self.images = {}
         self.sounds = {}
-        self.fonts = {}
         self.asset_path = "assets/"
         
-        # Create asset directories if they don't exist
-        self.create_directories()
+        # Load all assets on initialization
+        self.load_all_assets()
         
-    def create_directories(self):
-        """Create asset directories"""
-        directories = [
-            "assets/",
-            "assets/sprites/",
-            "assets/sprites/player/",
-            "assets/sprites/npcs/",
-            "assets/sprites/items/",
-            "assets/sprites/environment/",
-            "assets/sounds/",
-            "assets/music/",
-            "assets/fonts/"
-        ]
+    def load_all_assets(self):
+        """Load all available assets from the assets folder"""
+        print("Loading assets...")
         
-        for directory in directories:
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-                print(f"Created directory: {directory}")
+        # Load player sprites
+        self.load_player_sprites()
+        
+        # Load environment assets
+        self.load_environment_assets()
+        
+        # Load building assets
+        self.load_building_assets()
+        
+        # Load background assets
+        self.load_background_assets()
+        
+        print(f"Loaded {len(self.images)} assets successfully!")
     
     def load_image(self, filename, scale=None, colorkey=None):
         """Load and cache images"""
@@ -37,19 +35,21 @@ class AssetManager:
         
         try:
             full_path = os.path.join(self.asset_path, filename)
-            image = pygame.image.load(full_path)
-            
-            if colorkey:
-                image.set_colorkey(colorkey)
-            
-            if scale:
-                image = pygame.transform.scale(image, scale)
-            
-            self.images[filename] = image
-            return image
-        except:
-            print(f"Could not load image: {filename}")
-            return self.create_placeholder_image()
+            if os.path.exists(full_path):
+                image = pygame.image.load(full_path).convert_alpha()
+                
+                if colorkey:
+                    image.set_colorkey(colorkey)
+                
+                if scale:
+                    image = pygame.transform.scale(image, scale)
+                
+                self.images[filename] = image
+                return image
+        except Exception as e:
+            print(f"Could not load image: {filename} - {e}")
+        
+        return self.create_placeholder_image()
     
     def create_placeholder_image(self, size=(32, 32), color=(255, 0, 255)):
         """Create placeholder image if asset not found"""
@@ -57,41 +57,127 @@ class AssetManager:
         surface.fill(color)
         return surface
     
-    def load_sound(self, filename):
-        """Load and cache sounds"""
-        if filename in self.sounds:
-            return self.sounds[filename]
+    def load_player_sprites(self):
+        """Load player animation sprites"""
+        sprite_files = [
+            "Sprite/Idle.png",
+            "Sprite/Walk.png", 
+            "Sprite/Run.png",
+            "Sprite/Attack_1.png",
+            "Sprite/Attack_2.png",
+            "Sprite/Attack_3.png",
+            "Sprite/Jump.png",
+            "Sprite/Hurt.png",
+            "Sprite/Dead.png",
+            "Sprite/Shield.png"
+        ]
         
-        try:
-            full_path = os.path.join(self.asset_path, filename)
-            sound = pygame.mixer.Sound(full_path)
-            self.sounds[filename] = sound
-            return sound
-        except:
-            print(f"Could not load sound: {filename}")
-            return None
+        for sprite_file in sprite_files:
+            self.load_image(sprite_file)
     
-    def get_player_sprite(self, direction="down", frame=0):
-        """Get player sprite based on direction and animation frame"""
-        sprite_name = f"sprites/player/player_{direction}_{frame}.png"
-        return self.load_image(sprite_name, scale=(32, 48))
+    def load_environment_assets(self):
+        """Load environment assets"""
+        env_files = [
+            "Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Tree 01.png",
+            "Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Tree 02.png",
+            "Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Rock 01.png",
+            "Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Rock 02.png",
+            "Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Rock 03.png",
+            "Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Rock 04.png",
+            "Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Rock 05.png",
+            "Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Fence 01.png",
+            "Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Fence 02.png",
+            "Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Fence 03.png",
+            "Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Barrel.png",
+            "Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Storage.png",
+            "Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Shop.png",
+            "Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Quest Board.png",
+            "Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Wooden Barrel.png",
+            "Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Wooden Crate.png"
+        ]
+        
+        for env_file in env_files:
+            self.load_image(env_file)
     
-    def get_npc_sprite(self, npc_name):
-        """Get NPC sprite"""
-        sprite_name = f"sprites/npcs/{npc_name.lower()}.png"
-        return self.load_image(sprite_name, scale=(32, 48))
+    def load_building_assets(self):
+        """Load building assets"""
+        building_files = [
+            "Building/Cartoon_Medieval_Guard_Post_2D_Level_Set_Building - Wall A 01.png",
+            "Building/Cartoon_Medieval_Guard_Post_2D_Level_Set_Building - Wall A 02.png",
+            "Building/Cartoon_Medieval_Guard_Post_2D_Level_Set_Building - Wall B 01.png",
+            "Building/Cartoon_Medieval_Guard_Post_2D_Level_Set_Building - Wall C 01.png",
+            "Building/Cartoon_Medieval_Guard_Post_2D_Level_Set_Building - Roof A 01.png",
+            "Building/Cartoon_Medieval_Guard_Post_2D_Level_Set_Building - Roof B 01.png",
+            "Building/Cartoon_Medieval_Guard_Post_2D_Level_Set_Building - Door 01.png",
+            "Building/Cartoon_Medieval_Guard_Post_2D_Level_Set_Building - Door 02.png",
+            "Building/Cartoon_Medieval_Guard_Post_2D_Level_Set_Building - Window 01.png",
+            "Building/Cartoon_Medieval_Guard_Post_2D_Level_Set_Building - Window 02.png"
+        ]
+        
+        for building_file in building_files:
+            self.load_image(building_file)
     
-    def get_item_sprite(self, item_name):
-        """Get item sprite"""
-        sprite_name = f"sprites/items/{item_name}.png"
-        return self.load_image(sprite_name, scale=(16, 16))
+    def load_background_assets(self):
+        """Load background assets"""
+        bg_files = [
+            "Background/Cartoon_Medieval_Guard_Post_2D_Level_Set_Background - Layer 00.png",
+            "Background/Cartoon_Medieval_Guard_Post_2D_Level_Set_Background - Layer 01.png"
+        ]
+        
+        for bg_file in bg_files:
+            self.load_image(bg_file)
     
-    def get_environment_sprite(self, env_name):
+    def get_player_sprite(self, action="idle", frame=0):
+        """Get player sprite based on action"""
+        sprite_map = {
+            "idle": "Sprite/Idle.png",
+            "walk": "Sprite/Walk.png",
+            "run": "Sprite/Run.png",
+            "attack": "Sprite/Attack_1.png",
+            "hurt": "Sprite/Hurt.png",
+            "dead": "Sprite/Dead.png"
+        }
+        
+        sprite_file = sprite_map.get(action, "Sprite/Idle.png")
+        image = self.load_image(sprite_file, scale=(48, 64))
+        return image
+    
+    def get_environment_sprite(self, env_type, variant=1):
         """Get environment sprite"""
-        sprite_name = f"sprites/environment/{env_name}.png"
-        return self.load_image(sprite_name)
+        env_map = {
+            "tree": f"Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Tree 0{variant}.png",
+            "rock": f"Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Rock 0{variant}.png",
+            "fence": f"Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Fence 0{variant}.png",
+            "barrel": "Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Barrel.png",
+            "crate": "Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Wooden Crate.png",
+            "shop": "Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Shop.png",
+            "quest_board": "Environment/Cartoon_Medieval_Guard_Post_2D_Level_Set_Environment - Quest Board.png"
+        }
+        
+        sprite_file = env_map.get(env_type, env_map["rock"])
+        return self.load_image(sprite_file)
     
-    def get_tileset(self, tileset_name):
-        """Load tileset for environment"""
-        sprite_name = f"sprites/environment/{tileset_name}.png"
-        return self.load_image(sprite_name)
+    def get_building_sprite(self, building_type, variant=1):
+        """Get building sprite"""
+        building_map = {
+            "wall_a": f"Building/Cartoon_Medieval_Guard_Post_2D_Level_Set_Building - Wall A 0{variant}.png",
+            "wall_b": f"Building/Cartoon_Medieval_Guard_Post_2D_Level_Set_Building - Wall B 0{variant}.png",
+            "wall_c": f"Building/Cartoon_Medieval_Guard_Post_2D_Level_Set_Building - Wall C 0{variant}.png",
+            "roof_a": f"Building/Cartoon_Medieval_Guard_Post_2D_Level_Set_Building - Roof A 0{variant}.png",
+            "roof_b": f"Building/Cartoon_Medieval_Guard_Post_2D_Level_Set_Building - Roof B 0{variant}.png",
+            "door": f"Building/Cartoon_Medieval_Guard_Post_2D_Level_Set_Building - Door 0{variant}.png",
+            "window": f"Building/Cartoon_Medieval_Guard_Post_2D_Level_Set_Building - Window 0{variant}.png"
+        }
+        
+        sprite_file = building_map.get(building_type, building_map["wall_a"])
+        return self.load_image(sprite_file)
+    
+    def get_background_sprite(self, layer=0):
+        """Get background sprite"""
+        bg_file = f"Background/Cartoon_Medieval_Guard_Post_2D_Level_Set_Background - Layer 0{layer}.png"
+        return self.load_image(bg_file)
+    
+    def get_platformer_sprite(self, ground_type=1):
+        """Get platformer/ground sprite"""
+        ground_file = f"Platformer/Cartoon_Medieval_Guard_Post_2D_Level_Set_Platformer - Ground {ground_type:02d}.png"
+        return self.load_image(ground_file)
