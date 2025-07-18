@@ -352,13 +352,25 @@ def check_area_transition():
     global respawn_point
     # Check if player enters cave
     if 1350 < player.rect.x < 1450 and 50 < player.rect.y < 150:
-        environment.current_area = "cave"
-        respawn_point = (player.rect.x, player.rect.y)
+        if environment.current_area != "cave":
+            environment.current_area = "cave"
+            respawn_point = (player.rect.x, player.rect.y)
+            # Load cave area
+            cave_decorations, cave_walls = environment.load_cave_area()
+            environment.decorations = cave_decorations
+            environment.walls = cave_walls
+            # Move player to cave entrance
+            player.rect.x = 100
+            player.rect.y = 200
     # Check if player exits cave
-    elif environment.current_area == "cave" and player.rect.x < 100:
+    elif environment.current_area == "cave" and player.rect.x < 80 and player.rect.y < 150:
         environment.current_area = "village"
-        player.rect.x = 1400
-        player.rect.y = 100
+        # Reload village
+        environment.reset_levels()
+        environment.load_village_decorations()
+        # Move player to cave entrance in village
+        player.rect.x = 1350
+        player.rect.y = 150
 
 # Main game loop
 running = True
@@ -516,7 +528,7 @@ while running:
             # Only update if dialogue is not visible
             if not dialogue_box.visible:
                 all_walls = environment.get_current_walls()
-                player.update(all_walls)
+                player.update(all_walls, dialogue_box.visible)
                 
                 # Check area transitions
                 check_area_transition()
@@ -541,11 +553,14 @@ while running:
                 # Simple camera follow
                 camera_x = player.rect.centerx - SCREEN_WIDTH // 2
                 camera_y = player.rect.centery - SCREEN_HEIGHT // 2
-                camera_x = max(0, min(camera_x, 1600 - SCREEN_WIDTH))  # Limit camera
-                camera_y = max(0, min(camera_y, 1200 - SCREEN_HEIGHT))
+                camera_x = max(0, min(camera_x, environment.world_width - SCREEN_WIDTH))
+                camera_y = max(0, min(camera_y, environment.world_height - SCREEN_HEIGHT))
 
             # Draw everything
-            SCREEN.fill((34, 139, 34))  # Grass background
+            if environment.current_area != "cave":
+                SCREEN.fill((34, 139, 34))  # Grass background
+            else:
+                SCREEN.fill((20, 20, 20))  # Dark cave background
             
             # Apply day/night cycle
             visuals.draw_day_night_cycle(SCREEN, game_time)
@@ -557,7 +572,7 @@ while running:
             for sprite in all_sprites:
                 screen_x = sprite.rect.x - camera_x
                 screen_y = sprite.rect.y - camera_y
-                if -100 < screen_x < 900 and -100 < screen_y < 700:  # Only draw if on screen
+                if -200 < screen_x < SCREEN_WIDTH + 200 and -200 < screen_y < SCREEN_HEIGHT + 200:
                     SCREEN.blit(sprite.image, (screen_x, screen_y))
             
             # Draw UI elements
