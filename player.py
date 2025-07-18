@@ -1,12 +1,12 @@
 import pygame
-from asset_manager import AssetManager
+# from asset_manager import AssetManager
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
         
         # Initialize asset manager
-        self.asset_manager = AssetManager()
+        # self.asset_manager = AssetManager()
         
         # Animation states
         self.current_action = "idle"
