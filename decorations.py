@@ -1,5 +1,7 @@
+
 import pygame
 import random
+import math
 
 class Decoration(pygame.sprite.Sprite):
     def __init__(self, x, y, decoration_type):
@@ -74,8 +76,8 @@ class Decoration(pygame.sprite.Sprite):
         
         # Draw petals
         for angle in range(0, 360, 45):
-            x = 8 + 4 * pygame.math.cos(pygame.math.radians(angle))
-            y = 8 + 4 * pygame.math.sin(pygame.math.radians(angle))
+            x = 8 + 4 * math.cos(math.radians(angle))
+            y = 8 + 4 * math.sin(math.radians(angle))
             pygame.draw.circle(image, color, (int(x), int(y)), 2)
             
         # Center of flower

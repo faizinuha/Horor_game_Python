@@ -312,6 +312,10 @@ class Environment:
             self.decorations.add(fence)
             self.walls.add(Wall(fence.rect.x, fence.rect.y, fence.rect.width, fence.rect.height, "invisible"))
 
+    def add_terrain_features(self, water_bodies, mountains):
+        self.water_bodies = water_bodies
+        self.mountains = mountains
+
     def get_current_walls(self):
         return self.walls
 

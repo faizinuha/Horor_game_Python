@@ -61,13 +61,14 @@ for feature_type, pos in terrain_features:
         dec_type = random.choice(["flower", "bush"])
         decorations.append(Decoration(pos[0], pos[1], dec_type))
 
-environment.current_decorations.extend(decorations)
+for deco in decorations:
+    environment.decorations.add(deco)
 import json
 import os
 import sys
 from player import Player
 from environment import Environment
-from entity import NPC, QuestGiver, Item, Chest, Ghost,Tree, Rock, House, Wall, Barrel, Crate
+from entity import NPC, QuestGiver, Item, Chest, Ghost
 from audio import AudioManager
 from visuals import Visuals
 from menu import Menu
