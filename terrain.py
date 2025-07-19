@@ -162,19 +162,3 @@ class Mountain:
             pygame.draw.line(screen, (80, 80, 80),
                            (left_x, y),
                            (right_x, y), 2)
-
-# Di game loop
-delta_time = clock.tick(60) / 1000.0
-
-# Update systems
-time_system.update(delta_time)
-weather_system.update(delta_time, time_system.time)
-
-# Draw environment
-environment.draw(SCREEN)
-for water in water_bodies:
-    water.update(delta_time)
-    water.draw(SCREEN, camera_offset)
-for mountain in mountains:
-    mountain.draw(SCREEN, camera_offset)
-weather_system.draw(SCREEN)
