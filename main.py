@@ -1,11 +1,73 @@
-import pygame
-import sys
 import random
+import pygame
 import json
 import os
+import sys
+from weather_system import WeatherSystem, TimeSystem
+from terrain import TerrainGenerator, WaterBody, Mountain
 from player import Player
 from environment import Environment
 from entity import NPC, QuestGiver, Item, Chest, Ghost
+from audio import AudioManager
+from visuals import Visuals
+from menu import Menu
+from dialogue import DialogueBox
+from quest_system import QuestSystem
+from pause import PauseMenu
+
+# Init
+pygame.init()
+SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
+SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Pixel Horror Adventure")
+
+# Initialize systems
+weather_system = WeatherSystem(SCREEN_WIDTH, SCREEN_HEIGHT)
+time_system = TimeSystem()
+terrain_generator = TerrainGenerator(50, 50)  # Generate 50x50 terrain
+
+weather_system = WeatherSystem(SCREEN_WIDTH, SCREEN_HEIGHT)
+time_system = TimeSystem()
+terrain_generator = TerrainGenerator(50, 50)  # Generate 50x50 terrain
+
+# Generate terrain
+height_map = terrain_generator.generate_height_map()
+terrain_features = terrain_generator.generate_terrain_features(height_map)
+
+# Create terrain objects
+water_bodies = []
+mountains = []
+for feature_type, pos in terrain_features:
+    if feature_type == 'water':
+        water_bodies.append(WaterBody(pos[0], pos[1], 64, 64))
+    elif feature_type == 'mountain':
+        mountains.append(Mountain(pos[0], pos[1], "large"))
+    elif feature_type == 'hill':
+        mountains.append(Mountain(pos[0], pos[1], "small"))
+
+# Add terrain features to environment
+environment = Environment()
+environment.add_terrain_features(water_bodies, mountains)
+
+# Add decorations based on terrain
+from decorations import Decoration
+decorations = []
+for feature_type, pos in terrain_features:
+    if feature_type == 'tree':
+        decorations.append(Decoration(pos[0], pos[1], "tree"))
+    elif feature_type == 'rock':
+        decorations.append(Decoration(pos[0], pos[1], "rock"))
+    elif random.random() < 0.1:  # 10% chance for flowers and bushes
+        dec_type = random.choice(["flower", "bush"])
+        decorations.append(Decoration(pos[0], pos[1], dec_type))
+
+environment.current_decorations.extend(decorations)
+import json
+import os
+import sys
+from player import Player
+from environment import Environment
+from entity import NPC, QuestGiver, Item, Chest, Ghost,Tree, Rock, House, Wall, Barrel, Crate
 from audio import AudioManager
 from visuals import Visuals
 from menu import Menu

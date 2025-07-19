@@ -1,5 +1,8 @@
 import pygame
 
+import pygame
+import random
+
 class Visuals:
     def __init__(self, width, height):
         self.width = width
@@ -58,12 +61,31 @@ class Visuals:
                 pygame.draw.circle(screen, particle['color'], (int(screen_x), int(screen_y)), 2)
 
     def draw_day_night_cycle(self, screen, time_of_day=0.5):
-        """Draw day/night overlay (0.0 = night, 1.0 = day)"""
+        """Draw enhanced day/night overlay (0.0 = night, 1.0 = day)"""
+        # Calculate base darkness
         if time_of_day < 0.8:  # Not full day
-            darkness = int((0.8 - time_of_day) * 200)
-            self.overlay.fill((0, 0, darkness // 4))
-            self.overlay.set_alpha(darkness)
+            base_darkness = int((0.8 - time_of_day) * 200)
+            
+            # Dawn/Dusk colors
+            if 0.2 <= time_of_day <= 0.3:  # Dawn
+                self.overlay.fill((base_darkness//2, base_darkness//4, 0))  # Orange tint
+            elif 0.7 <= time_of_day <= 0.8:  # Dusk
+                self.overlay.fill((base_darkness//3, 0, base_darkness//4))  # Purple tint
+            else:  # Night
+                self.overlay.fill((0, 0, base_darkness//3))  # Blue tint
+                
+            # Adjust alpha based on time
+            alpha = min(255, base_darkness + 55)
+            self.overlay.set_alpha(alpha)
             screen.blit(self.overlay, (0, 0))
+            
+            # Add stars at night
+            if time_of_day < 0.2 or time_of_day > 0.8:
+                for _ in range(50):
+                    star_x = random.randint(0, self.width)
+                    star_y = random.randint(0, self.height)
+                    star_size = random.randint(1, 2)
+                    pygame.draw.circle(screen, (255, 255, 255), (star_x, star_y), star_size)
 
     def draw_weather_effect(self, screen, weather="clear"):
         """Draw weather effects"""

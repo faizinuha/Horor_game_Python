@@ -16,11 +16,30 @@ class Quest:
             for item, amount in requirements.items():
                 self.progress[item] = 0
 
+class Item:
+    def __init__(self, name, item_type, description, value=0, weight=1):
+        self.name = name
+        self.type = item_type  # weapon, potion, key_item, etc.
+        self.description = description
+        self.value = value
+        self.weight = weight
+        self.stackable = True if item_type in ["potion", "herb", "coin"] else False
+
 class QuestSystem:
     def __init__(self):
         self.quests = {}
         self.completed_quests = []
         self.inventory = {}
+        self.max_weight = 50
+        self.current_weight = 0
+        
+        # Predefined items
+        self.item_templates = {
+            "health_potion": Item("Health Potion", "potion", "Restores 50 HP", 20, 0.5),
+            "rusty_key": Item("Rusty Key", "key_item", "An old key that might open something", 0, 0.1),
+            "magic_herb": Item("Magic Herb", "herb", "A mysterious glowing herb", 5, 0.2),
+            "ancient_scroll": Item("Ancient Scroll", "key_item", "Contains mysterious writings", 0, 0.3),
+        }
 
     def add_quest(self, quest_id, name, description, requirements):
         if quest_id not in self.quests:

@@ -2,9 +2,11 @@ import pygame
 import random
 import math
 
-class NPC(pygame.sprite.Sprite):
-    def __init__(self, name, x, y, dialogues):
-        super().__init__()
+from sprite_animation import CharacterSprite
+
+class NPC(CharacterSprite):
+    def __init__(self, name, x, y, dialogues, sprite_sheet_path="assets/Sprite/npc_sheet.png"):
+        super().__init__(x, y, sprite_sheet_path, 32, 48)
         self.name = name
         self.dialogues = dialogues
         self.original_x = x
@@ -12,6 +14,8 @@ class NPC(pygame.sprite.Sprite):
         self.wander_timer = 0
         self.wander_direction = random.choice([(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)])
         self.wander_speed = 0.5
+        self.emotion_state = "neutral"  # Can be: neutral, happy, sad, angry
+        self.interaction_radius = 50
         
         # Create pixel art NPC
         self.image = pygame.Surface((32, 48))

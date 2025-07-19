@@ -4,18 +4,21 @@ class AudioManager:
     def __init__(self):
         self.volume = 0.7  # Default volume
         try:
-            pygame.mixer.init()
+            pygame.mixer.init(44100, -16, 2, 2048)
             self.sounds = {
                 "talk": None,  # Will be created programmatically
                 "quest_complete": None,
                 "item_pickup": None,
                 "footstep": None,
                 "menu_select": None,
-                "ghost_hit": None
+                "ghost_hit": None,
+                "ambient": None,
+                "door_creak": pygame.mixer.Sound("audio/creaking_door.wav"),
+                "whisper": pygame.mixer.Sound("audio/whisper.wav")
             }
             self._create_sounds()
-        except:
-            print("[WARNING] Audio disabled: Error initializing audio")
+        except Exception as e:
+            print(f"[WARNING] Audio disabled: Error initializing audio - {str(e)}")
             self.sounds = {}
 
     def _create_sounds(self):

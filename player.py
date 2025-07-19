@@ -4,6 +4,16 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
         
+        # Player stats
+        self.max_health = 100
+        self.health = self.max_health
+        self.max_energy = 100
+        self.energy = self.max_energy
+        self.energy_regen = 0.5
+        self.is_invulnerable = False
+        self.invulnerable_timer = 0
+        self.invulnerable_duration = 1000  # 1 second of invulnerability after hit
+        
         # Animation states
         self.current_action = "idle"
         self.animation_frame = 0
@@ -18,18 +28,30 @@ class Player(pygame.sprite.Sprite):
         self.original_y = y
         self.walking = False
         self.direction = "down"
+        
+        # Add stamina system
+        self.stamina = 100
+        self.max_stamina = 100
+        self.stamina_regen = 0.5
+        self.sprint_speed = 5
+        self.sprint_drain = 1
+        self.is_sprinting = False
     
     def _create_player_sprite(self, action, frame):
-        """Create enhanced pixel art player sprite"""
+        """Create enhanced pixel art player sprite with advanced animations"""
         image = pygame.Surface((32, 48))
         image.fill((0, 255, 0))
         image.set_colorkey((0, 255, 0))
         
-        # Base colors
+        # Base colors with shading
         skin_color = (255, 220, 177)
+        skin_shadow = (230, 195, 152)
         hair_color = (139, 69, 19)
+        hair_highlight = (169, 89, 39)
         shirt_color = (0, 100, 200)
+        shirt_shadow = (0, 80, 160)
         pants_color = (139, 69, 19)
+        pants_shadow = (119, 49, 0)
         
         if action == "walk":
             # Walking animation - slight bobbing
@@ -142,3 +164,40 @@ class Player(pygame.sprite.Sprite):
 
     def reset_position(self):
         self.rect.center = (self.original_x, self.original_y)
+        
+    def take_damage(self, amount):
+        """Handle taking damage from monsters"""
+        if not self.is_invulnerable:
+            self.health = max(0, self.health - amount)
+            self.is_invulnerable = True
+            self.invulnerable_timer = pygame.time.get_ticks()
+            return True
+        return False
+    
+    def use_energy(self, amount):
+        """Use energy for actions like sprinting"""
+        if self.energy >= amount:
+            self.energy = max(0, self.energy - amount)
+            return True
+        return False
+    
+    def update_stats(self, delta_time):
+        """Update player stats like health and energy"""
+        # Update invulnerability
+        if self.is_invulnerable:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.invulnerable_timer >= self.invulnerable_duration:
+                self.is_invulnerable = False
+        
+        # Regenerate energy when not sprinting
+        if not self.is_sprinting and self.energy < self.max_energy:
+            self.energy = min(self.max_energy, self.energy + self.energy_regen * delta_time)
+    
+    def get_stats(self):
+        """Get current player stats"""
+        return {
+            'health': self.health,
+            'max_health': self.max_health,
+            'energy': self.energy,
+            'max_energy': self.max_energy
+        }
