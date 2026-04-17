@@ -1,219 +1,255 @@
-import random
-import pygame
 import json
 import os
+import random
 import sys
-from weather_system import WeatherSystem, TimeSystem
-from terrain import TerrainGenerator, WaterBody, Mountain
-from player import Player
-from environment import Environment
-from entity import NPC, QuestGiver, Item, Chest, Ghost
-from audio import AudioManager
-from visuals import Visuals
-from menu import Menu
-from dialogue import DialogueBox
-from quest_system import QuestSystem
-from pause import PauseMenu
 
-# Init
+import pygame
+
+from audio import AudioManager
+from decorations import Decoration
+from dialogue import DialogueBox
+from entity import NPC, Chest, Ghost, Item, QuestGiver
+from environment import Environment
+from menu import Menu
+from pause import PauseMenu
+from player import Player
+from quest_system import QuestSystem
+from terrain import Mountain, TerrainGenerator, WaterBody
+from visuals import Visuals
+from weather_system import TimeSystem, WeatherSystem
+
+# ---------------------------------------------------------------------------
+# Initialization
+# ---------------------------------------------------------------------------
 pygame.init()
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
 SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Pixel Horror Adventure")
 
-# Initialize systems
+audio_manager = AudioManager()
+
+# Fonts
+font = pygame.font.Font(None, 74)
+small_font = pygame.font.Font(None, 36)
+
+# Menus / UI
+menu = Menu(SCREEN, font, small_font, SCREEN_WIDTH, SCREEN_HEIGHT, audio_manager)
+pause_menu = PauseMenu(SCREEN, font, small_font, SCREEN_WIDTH, SCREEN_HEIGHT, audio_manager)
+dialogue_box = DialogueBox(SCREEN, small_font, SCREEN_WIDTH, SCREEN_HEIGHT)
+
+# Systems
 weather_system = WeatherSystem(SCREEN_WIDTH, SCREEN_HEIGHT)
 time_system = TimeSystem()
 terrain_generator = TerrainGenerator(50, 50)  # Generate 50x50 terrain
+quest_system = QuestSystem()
+visuals = Visuals(SCREEN_WIDTH, SCREEN_HEIGHT)
+environment = Environment()
 
-weather_system = WeatherSystem(SCREEN_WIDTH, SCREEN_HEIGHT)
-time_system = TimeSystem()
-terrain_generator = TerrainGenerator(50, 50)  # Generate 50x50 terrain
-
-# Generate terrain
+# ---------------------------------------------------------------------------
+# World generation
+# ---------------------------------------------------------------------------
 height_map = terrain_generator.generate_height_map()
 terrain_features = terrain_generator.generate_terrain_features(height_map)
 
-# Create terrain objects
 water_bodies = []
 mountains = []
-for feature_type, pos in terrain_features:
-    if feature_type == 'water':
-        water_bodies.append(WaterBody(pos[0], pos[1], 64, 64))
-    elif feature_type == 'mountain':
-        mountains.append(Mountain(pos[0], pos[1], "large"))
-    elif feature_type == 'hill':
-        mountains.append(Mountain(pos[0], pos[1], "small"))
-
-# Add terrain features to environment
-environment = Environment()
-environment.add_terrain_features(water_bodies, mountains)
-
-# Add decorations based on terrain
-from decorations import Decoration
 decorations = []
 for feature_type, pos in terrain_features:
-    if feature_type == 'tree':
+    if feature_type == "water":
+        water_bodies.append(WaterBody(pos[0], pos[1], 64, 64))
+    elif feature_type == "mountain":
+        mountains.append(Mountain(pos[0], pos[1], "large"))
+    elif feature_type == "hill":
+        mountains.append(Mountain(pos[0], pos[1], "small"))
+    elif feature_type == "tree":
         decorations.append(Decoration(pos[0], pos[1], "tree"))
-    elif feature_type == 'rock':
+    elif feature_type == "rock":
         decorations.append(Decoration(pos[0], pos[1], "rock"))
-    elif random.random() < 0.1:  # 10% chance for flowers and bushes
-        dec_type = random.choice(["flower", "bush"])
-        decorations.append(Decoration(pos[0], pos[1], dec_type))
+    elif random.random() < 0.1:  # occasional flowers / bushes
+        decorations.append(Decoration(pos[0], pos[1], random.choice(["flower", "bush"])))
 
+environment.add_terrain_features(water_bodies, mountains)
 for deco in decorations:
     environment.decorations.add(deco)
-import json
-import os
-import sys
-from player import Player
-from environment import Environment
-from entity import NPC, QuestGiver, Item, Chest, Ghost
-from audio import AudioManager
-from visuals import Visuals
-from menu import Menu
-from dialogue import DialogueBox
-from quest_system import QuestSystem
-from pause import PauseMenu
 
-# Init
-pygame.init()
-audio_manager = AudioManager()
-SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
-SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Pixel Adventure")
-
-# State
-font = pygame.font.Font(None, 74)
-small_font = pygame.font.Font(None, 36)
-current_game_state = "MENU"
-
-# Menu setup
-menu = Menu(SCREEN, font, small_font, SCREEN_WIDTH, SCREEN_HEIGHT, audio_manager)
-pause_menu = PauseMenu(SCREEN, font, small_font, SCREEN_WIDTH, SCREEN_HEIGHT, audio_manager)
-
-# Dialogue setup
-dialogue_box = DialogueBox(SCREEN, small_font, SCREEN_WIDTH, SCREEN_HEIGHT)
-
-# Quest system
-quest_system = QuestSystem()
-
+# ---------------------------------------------------------------------------
 # Player
+# ---------------------------------------------------------------------------
 player = Player(100, 500)
 all_sprites = pygame.sprite.Group(player)
 
+# ---------------------------------------------------------------------------
 # NPCs
+# ---------------------------------------------------------------------------
 npcs = pygame.sprite.Group()
 
-# Village NPCs
-village_elder = QuestGiver("Elder", 200, 200, [
-    "Welcome to our village, young adventurer!",
-    "We have been troubled by monsters lately...",
-    "Could you help us by collecting 5 herbs from the forest?",
-    "They grow near the old oak trees."
-], "collect_herbs", {"herbs": 5})
+village_elder = QuestGiver(
+    "Elder",
+    200,
+    200,
+    [
+        "Welcome to our village, young adventurer!",
+        "We have been troubled by monsters lately...",
+        "Could you help us by collecting 5 herbs from the forest?",
+        "They grow near the old oak trees.",
+    ],
+    "collect_herbs",
+    {"herb": 5},
+)
 
-blacksmith = NPC("Blacksmith", 400, 180, [
-    "I can forge you better weapons!",
-    "Bring me some iron ore and I'll make you a sword.",
-    "The mines are to the east of here."
-])
+blacksmith = NPC(
+    "Blacksmith",
+    400,
+    180,
+    [
+        "I can forge you better weapons!",
+        "Bring me some iron ore and I'll make you a sword.",
+        "The mines are to the east of here.",
+    ],
+)
 
-merchant = NPC("Merchant", 600, 220, [
-    "Welcome to my shop!",
-    "I have potions and supplies for your journey.",
-    "Come back when you have some gold!"
-])
+merchant = NPC(
+    "Merchant",
+    600,
+    220,
+    [
+        "Welcome to my shop!",
+        "I have potions and supplies for your journey.",
+        "Come back when you have some gold!",
+    ],
+)
 
-forest_guide = NPC("Guide", 150, 350, [
-    "The forest can be dangerous at night.",
-    "Watch out for the wolves!",
-    "Stay on the path and you'll be safe."
-])
+forest_guide = NPC(
+    "Guide",
+    150,
+    350,
+    [
+        "The forest can be dangerous at night.",
+        "Watch out for the wolves!",
+        "Stay on the path and you'll be safe.",
+    ],
+)
 
-# Wandering NPCs
-villager1 = NPC("Villager", 300, 300, [
-    "Good day, traveler!",
-    "The weather has been lovely lately.",
-    "I hope you enjoy your stay in our village."
-])
+villager1 = NPC(
+    "Villager",
+    300,
+    300,
+    [
+        "Good day, traveler!",
+        "The weather has been lovely lately.",
+        "I hope you enjoy your stay in our village.",
+    ],
+)
 
-villager2 = NPC("Farmer", 500, 400, [
-    "My crops are growing well this season.",
-    "The soil here is very fertile.",
-    "Would you like to buy some vegetables?"
-])
+villager2 = NPC(
+    "Farmer",
+    500,
+    400,
+    [
+        "My crops are growing well this season.",
+        "The soil here is very fertile.",
+        "Would you like to buy some vegetables?",
+    ],
+)
 
-child_npc = NPC("Child", 250, 450, [
-    "Have you seen my ball?",
-    "I was playing near the well...",
-    "Mom says not to talk to strangers, but you look nice!"
-])
+child_npc = NPC(
+    "Child",
+    250,
+    450,
+    [
+        "Have you seen my ball?",
+        "I was playing near the well...",
+        "Mom says not to talk to strangers, but you look nice!",
+    ],
+)
 
-old_woman = NPC("Old Woman", 450, 300, [
-    "Back in my day, this village was much smaller.",
-    "So many new faces these days...",
-    "Be careful out there, young one."
-])
+old_woman = NPC(
+    "Old Woman",
+    450,
+    300,
+    [
+        "Back in my day, this village was much smaller.",
+        "So many new faces these days...",
+        "Be careful out there, young one.",
+    ],
+)
 
-# Forest NPCs
-hermit = NPC("Hermit", 1200, 300, [
-    "I live alone in these woods...",
-    "The spirits whisper to me at night.",
-    "Beware the cave to the north!"
-])
+hermit = NPC(
+    "Hermit",
+    1200,
+    300,
+    [
+        "I live alone in these woods...",
+        "The spirits whisper to me at night.",
+        "Beware the cave to the north!",
+    ],
+)
 
-hunter = NPC("Hunter", 1100, 450, [
-    "I've been tracking a strange beast.",
-    "It leaves glowing footprints...",
-    "Have you seen anything unusual?"
-])
+hunter = NPC(
+    "Hunter",
+    1100,
+    450,
+    [
+        "I've been tracking a strange beast.",
+        "It leaves glowing footprints...",
+        "Have you seen anything unusual?",
+    ],
+)
 
-npcs.add(village_elder, blacksmith, merchant, forest_guide, villager1, villager2, child_npc, old_woman, hermit, hunter)
+npcs.add(
+    village_elder,
+    blacksmith,
+    merchant,
+    forest_guide,
+    villager1,
+    villager2,
+    child_npc,
+    old_woman,
+    hermit,
+    hunter,
+)
 all_sprites.add(npcs)
 
-# Ghosts for cave
+# ---------------------------------------------------------------------------
+# Ghosts (cave)
+# ---------------------------------------------------------------------------
 ghosts = pygame.sprite.Group()
-for i in range(3):
+for _ in range(3):
     ghost_x = 1400 + random.randint(0, 200)
     ghost_y = 100 + random.randint(0, 100)
-    ghost = Ghost(ghost_x, ghost_y)
-    ghosts.add(ghost)
+    ghosts.add(Ghost(ghost_x, ghost_y))
 all_sprites.add(ghosts)
 
-# Items and collectibles
+# ---------------------------------------------------------------------------
+# Items and chests
+# ---------------------------------------------------------------------------
 items = pygame.sprite.Group()
-# Add some herbs for the quest
-for i in range(8):
-    herb_x = random.randint(1000, 1500)  # In forest area
+for _ in range(8):  # herbs for the quest
+    herb_x = random.randint(1000, 1500)
     herb_y = random.randint(200, 500)
-    herb = Item("herb", herb_x, herb_y)
-    items.add(herb)
+    items.add(Item("herb", herb_x, herb_y))
 
-# Add some coins
-for i in range(5):
+for _ in range(5):  # coins
     coin_x = random.randint(150, 650)
     coin_y = random.randint(150, 450)
-    coin = Item("coin", coin_x, coin_y)
-    items.add(coin)
+    items.add(Item("coin", coin_x, coin_y))
 
-# Add chests
-chest1 = Chest(350, 500, [{"type": "coin", "amount": 10}, {"type": "potion", "amount": 1}])
-chest2 = Chest(550, 350, [{"type": "herb", "amount": 3}])
-chest3 = Chest(1300, 400, [{"type": "key", "amount": 1}, {"type": "coin", "amount": 20}])
-items.add(chest1, chest2, chest3)
-
+items.add(Chest(350, 500, [{"type": "coin", "amount": 10}, {"type": "potion", "amount": 1}]))
+items.add(Chest(550, 350, [{"type": "herb", "amount": 3}]))
+items.add(Chest(1300, 400, [{"type": "key", "amount": 1}, {"type": "coin", "amount": 20}]))
 all_sprites.add(items)
 
-environment = Environment()
-visuals = Visuals(SCREEN_WIDTH, SCREEN_HEIGHT)
+# ---------------------------------------------------------------------------
+# Game state
+# ---------------------------------------------------------------------------
+current_game_state = "MENU"
 
-# Game time system
-game_time = 0.5  # 0.0 = midnight, 0.5 = noon, 1.0 = midnight again
+# Day/night (0.0 = midnight, 0.5 = noon, 1.0 = midnight again)
+game_time = 0.5
 time_speed = 0.001
 
-# Save system
 SAVE_FILE = "savegame.json"
+
 
 def save_game():
     save_data = {
@@ -222,34 +258,39 @@ def save_game():
         "game_time": game_time,
         "inventory": quest_system.get_inventory(),
         "completed_quests": quest_system.get_completed_quests(),
-        "current_area": environment.current_area
+        "current_area": environment.current_area,
     }
-    with open(SAVE_FILE, 'w') as f:
-        json.dump(save_data, f)
+    try:
+        with open(SAVE_FILE, "w") as f:
+            json.dump(save_data, f)
+        return True
+    except OSError as exc:
+        print(f"[WARNING] Could not save game: {exc}")
+        return False
+
 
 def load_game():
     global game_time
-    if os.path.exists(SAVE_FILE):
-        try:
-            with open(SAVE_FILE, 'r') as f:
-                save_data = json.load(f)
-            
-            player.rect.x = save_data.get("player_x", 100)
-            player.rect.y = save_data.get("player_y", 500)
-            game_time = save_data.get("game_time", 0.5)
-            
-            # Restore inventory
-            for item, amount in save_data.get("inventory", {}).items():
-                quest_system.inventory[item] = amount
-            
-            # Restore completed quests
-            quest_system.completed_quests = save_data.get("completed_quests", [])
-            
-            environment.current_area = save_data.get("current_area", "village")
-            return True
-        except:
-            return False
-    return False
+    if not os.path.exists(SAVE_FILE):
+        return False
+    try:
+        with open(SAVE_FILE, "r") as f:
+            save_data = json.load(f)
+
+        player.rect.x = save_data.get("player_x", 100)
+        player.rect.y = save_data.get("player_y", 500)
+        game_time = save_data.get("game_time", 0.5)
+
+        for item_name, amount in save_data.get("inventory", {}).items():
+            quest_system.inventory[item_name] = amount
+
+        quest_system.completed_quests = save_data.get("completed_quests", [])
+        environment.current_area = save_data.get("current_area", "village")
+        return True
+    except (OSError, ValueError, KeyError) as exc:
+        print(f"[WARNING] Could not load save file: {exc}")
+        return False
+
 
 # Cutscene variables
 cutscene_active = False
@@ -259,7 +300,7 @@ cutscene_texts = [
     "Long ago, in a peaceful village...",
     "A young adventurer arrived seeking glory...",
     "Little did they know what awaited them...",
-    "Your adventure begins now!"
+    "Your adventure begins now!",
 ]
 
 # Game variables
@@ -267,6 +308,7 @@ camera_x = 0
 camera_y = 0
 show_quest_log = False
 respawn_point = (100, 500)
+
 
 def draw_game_over():
     SCREEN.fill((20, 20, 40))
@@ -276,31 +318,33 @@ def draw_game_over():
     SCREEN.blit(restart, (SCREEN_WIDTH // 2 - restart.get_width() // 2, 350))
     pygame.display.flip()
 
+
 def draw_controller_info():
     SCREEN.fill((20, 40, 60))
     title = font.render("Controls", True, (255, 255, 255))
-    wasd_info = small_font.render("Movement: WASD or Arrow Keys", True, (255, 255, 255))
-    interact_info = small_font.render("Interact with NPCs: SPACE (when near)", True, (255, 255, 255))
-    quest_info = small_font.render("View Quests: Q", True, (255, 255, 255))
-    inventory_info = small_font.render("Inventory: I", True, (255, 255, 255))
-    pause_info = small_font.render("Pause: ESC", True, (255, 255, 255))
-    save_info = small_font.render("Save Game: F5", True, (255, 255, 255))
-    back_info = small_font.render("Press ESC to go back", True, (255, 255, 255))
-
+    lines = [
+        "Movement: WASD or Arrow Keys",
+        "Interact with NPCs: SPACE (when near)",
+        "View Quests: Q",
+        "Inventory: I",
+        "Pause: ESC",
+        "Save Game: F5",
+        "",
+        "Press ESC to go back",
+    ]
     SCREEN.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
-    SCREEN.blit(wasd_info, (SCREEN_WIDTH // 2 - wasd_info.get_width() // 2, 180))
-    SCREEN.blit(interact_info, (SCREEN_WIDTH // 2 - interact_info.get_width() // 2, 210))
-    SCREEN.blit(quest_info, (SCREEN_WIDTH // 2 - quest_info.get_width() // 2, 240))
-    SCREEN.blit(inventory_info, (SCREEN_WIDTH // 2 - inventory_info.get_width() // 2, 270))
-    SCREEN.blit(pause_info, (SCREEN_WIDTH // 2 - pause_info.get_width() // 2, 300))
-    SCREEN.blit(save_info, (SCREEN_WIDTH // 2 - save_info.get_width() // 2, 330))
-    SCREEN.blit(back_info, (SCREEN_WIDTH // 2 - back_info.get_width() // 2, 400))
+    for i, line in enumerate(lines):
+        text = small_font.render(line, True, (255, 255, 255))
+        SCREEN.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 180 + i * 30))
     pygame.display.flip()
+
 
 def draw_settings_menu():
     SCREEN.fill((40, 20, 60))
     title = font.render("Settings", True, (255, 255, 255))
-    volume_info = small_font.render(f"Volume: {int(audio_manager.volume * 100)}%", True, (255, 255, 255))
+    volume_info = small_font.render(
+        f"Volume: {int(audio_manager.volume * 100)}%", True, (255, 255, 255)
+    )
     volume_controls = small_font.render("Use +/- to adjust volume", True, (200, 200, 200))
     graphics_info = small_font.render("Graphics: Pixel Perfect", True, (255, 255, 255))
     back_info = small_font.render("Press ESC to go back", True, (255, 255, 255))
@@ -312,52 +356,60 @@ def draw_settings_menu():
     SCREEN.blit(back_info, (SCREEN_WIDTH // 2 - back_info.get_width() // 2, 400))
     pygame.display.flip()
 
+
 def draw_cutscene():
     SCREEN.fill((10, 10, 20))
-    
-    # Draw a simple scene background
+
+    # Scenic background
     pygame.draw.rect(SCREEN, (34, 139, 34), (0, 400, SCREEN_WIDTH, 200))  # Grass
     pygame.draw.circle(SCREEN, (255, 255, 0), (700, 100), 50)  # Sun
-    
-    # Draw village silhouette
-    pygame.draw.rect(SCREEN, (101, 67, 33), (200, 300, 80, 100))  # House 1
-    pygame.draw.polygon(SCREEN, (139, 69, 19), [(200, 300), (240, 250), (280, 300)])  # Roof 1
-    pygame.draw.rect(SCREEN, (101, 67, 33), (350, 320, 100, 80))  # House 2
-    pygame.draw.polygon(SCREEN, (139, 69, 19), [(350, 320), (400, 270), (450, 320)])  # Roof 2
-    
-    # Draw player walking
-    player_x = 50 + (cutscene_timer * 2) % (SCREEN_WIDTH - 100)
-    pygame.draw.rect(SCREEN, (100, 150, 255), (player_x, 450, 20, 30))  # Player body
-    pygame.draw.circle(SCREEN, (255, 220, 177), (player_x + 10, 440), 8)  # Player head
-    
-    # Draw text
+
+    # Village silhouette
+    pygame.draw.rect(SCREEN, (101, 67, 33), (200, 300, 80, 100))
+    pygame.draw.polygon(SCREEN, (139, 69, 19), [(200, 300), (240, 250), (280, 300)])
+    pygame.draw.rect(SCREEN, (101, 67, 33), (350, 320, 100, 80))
+    pygame.draw.polygon(SCREEN, (139, 69, 19), [(350, 320), (400, 270), (450, 320)])
+
+    # Player walking
+    walking_x = 50 + (cutscene_timer * 2) % (SCREEN_WIDTH - 100)
+    pygame.draw.rect(SCREEN, (100, 150, 255), (walking_x, 450, 20, 30))
+    pygame.draw.circle(SCREEN, (255, 220, 177), (walking_x + 10, 440), 8)
+
+    # Text
     if cutscene_step < len(cutscene_texts):
         text = small_font.render(cutscene_texts[cutscene_step], True, (255, 255, 255))
         text_rect = pygame.Rect(50, 50, SCREEN_WIDTH - 100, 100)
-        pygame.draw.rect(SCREEN, (0, 0, 0, 128), text_rect)
+        pygame.draw.rect(SCREEN, (0, 0, 0), text_rect)
         pygame.draw.rect(SCREEN, (255, 255, 255), text_rect, 2)
         SCREEN.blit(text, (text_rect.x + 10, text_rect.y + 10))
-    
+
     skip_text = small_font.render("Press SPACE to skip", True, (200, 200, 200))
     SCREEN.blit(skip_text, (SCREEN_WIDTH - skip_text.get_width() - 20, SCREEN_HEIGHT - 40))
-    
+
     pygame.display.flip()
+
 
 def check_npc_interaction():
     for npc in npcs:
-        distance = ((player.rect.centerx - npc.rect.centerx) ** 2 + 
-                   (player.rect.centery - npc.rect.centery) ** 2) ** 0.5
-        if distance < 60:  # Interaction range
+        distance = (
+            (player.rect.centerx - npc.rect.centerx) ** 2
+            + (player.rect.centery - npc.rect.centery) ** 2
+        ) ** 0.5
+        if distance < 60:
             return npc
     return None
 
+
 def check_item_pickup():
     for item in items:
-        distance = ((player.rect.centerx - item.rect.centerx) ** 2 + 
-                   (player.rect.centery - item.rect.centery) ** 2) ** 0.5
-        if distance < 40:  # Pickup range
+        distance = (
+            (player.rect.centerx - item.rect.centerx) ** 2
+            + (player.rect.centery - item.rect.centery) ** 2
+        ) ** 0.5
+        if distance < 40:
             return item
     return None
+
 
 def check_ghost_collision():
     for ghost in ghosts:
@@ -365,95 +417,95 @@ def check_ghost_collision():
             return ghost
     return None
 
+
 def draw_quest_log():
     SCREEN.fill((20, 20, 40))
     title = font.render("Quest Log", True, (255, 255, 255))
     SCREEN.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 50))
-    
+
     y_offset = 150
     active_quests = quest_system.get_active_quests()
-    
+
     if not active_quests:
         no_quests = small_font.render("No active quests", True, (150, 150, 150))
         SCREEN.blit(no_quests, (SCREEN_WIDTH // 2 - no_quests.get_width() // 2, y_offset))
     else:
         for quest in active_quests:
-            quest_text = small_font.render(f"• {quest['name']}", True, (255, 255, 100))
+            quest_text = small_font.render(f"- {quest['name']}", True, (255, 255, 100))
             SCREEN.blit(quest_text, (100, y_offset))
-            
-            desc_text = small_font.render(quest['description'], True, (200, 200, 200))
+
+            desc_text = small_font.render(quest["description"], True, (200, 200, 200))
             SCREEN.blit(desc_text, (120, y_offset + 30))
-            
-            # Show progress
-            if quest['type'] == 'collect':
-                progress = quest_system.get_quest_progress(quest['id'])
-                target = sum(quest['requirements'].values())
-                progress_text = small_font.render(f"Progress: {progress}/{target}", True, (150, 255, 150))
+
+            if quest["type"] == "collect":
+                progress = quest_system.get_quest_progress(quest["id"])
+                target = sum(quest["requirements"].values())
+                progress_text = small_font.render(
+                    f"Progress: {progress}/{target}", True, (150, 255, 150)
+                )
                 SCREEN.blit(progress_text, (120, y_offset + 60))
-            
+
             y_offset += 120
-    
+
     back_info = small_font.render("Press Q to close", True, (255, 255, 255))
     SCREEN.blit(back_info, (SCREEN_WIDTH // 2 - back_info.get_width() // 2, SCREEN_HEIGHT - 50))
     pygame.display.flip()
 
+
 def draw_time_ui():
-    # Draw time indicator
     time_text = "Day" if 0.25 < game_time < 0.75 else "Night"
     time_color = (255, 255, 100) if time_text == "Day" else (100, 100, 255)
     time_surface = small_font.render(time_text, True, time_color)
     SCREEN.blit(time_surface, (SCREEN_WIDTH - 100, 80))
-    
-    # Draw time bar
+
     time_bar_rect = pygame.Rect(SCREEN_WIDTH - 120, 110, 100, 10)
     pygame.draw.rect(SCREEN, (50, 50, 50), time_bar_rect)
     time_fill = pygame.Rect(SCREEN_WIDTH - 120, 110, int(100 * game_time), 10)
     pygame.draw.rect(SCREEN, time_color, time_fill)
     pygame.draw.rect(SCREEN, (255, 255, 255), time_bar_rect, 1)
 
+
 def check_area_transition():
     global respawn_point
-    # Check if player enters cave
+    # Enter cave
     if 1350 < player.rect.x < 1450 and 50 < player.rect.y < 150:
         if environment.current_area != "cave":
             environment.current_area = "cave"
             respawn_point = (player.rect.x, player.rect.y)
-            # Load cave area
             cave_decorations, cave_walls = environment.load_cave_area()
             environment.decorations = cave_decorations
             environment.walls = cave_walls
-            # Move player to cave entrance
             player.rect.x = 100
             player.rect.y = 200
-    # Check if player exits cave
+    # Exit cave
     elif environment.current_area == "cave" and player.rect.x < 80 and player.rect.y < 150:
         environment.current_area = "village"
-        # Reload village
         environment.reset_levels()
         environment.load_village_decorations()
-        # Move player to cave entrance in village
         player.rect.x = 1350
         player.rect.y = 150
 
-# Main game loop
+
+# ---------------------------------------------------------------------------
+# Main loop
+# ---------------------------------------------------------------------------
 running = True
 clock = pygame.time.Clock()
 
 while running:
     dt = clock.tick(60)
-    
-    # Update game time
+
     if current_game_state == "PLAYING":
         game_time += time_speed
         if game_time > 1.0:
             game_time = 0.0
-    
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.KEYDOWN:
             if current_game_state == "MENU":
-                if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
+                if event.key in (pygame.K_SPACE, pygame.K_RETURN):
                     selected_option = menu.get_selected_option()
                     if selected_option == "Start":
                         current_game_state = "CUTSCENE"
@@ -465,7 +517,6 @@ while running:
                         if load_game():
                             current_game_state = "PLAYING"
                         else:
-                            # Show error message or create new game
                             current_game_state = "CUTSCENE"
                             cutscene_active = True
                     elif selected_option == "Controller":
@@ -474,11 +525,11 @@ while running:
                         current_game_state = "SETTINGS"
                     elif selected_option == "Exit":
                         running = False
-                elif event.key in [pygame.K_UP, pygame.K_w]:
+                elif event.key in (pygame.K_UP, pygame.K_w):
                     menu.navigate(-1)
-                elif event.key in [pygame.K_DOWN, pygame.K_s]:
+                elif event.key in (pygame.K_DOWN, pygame.K_s):
                     menu.navigate(1)
-            
+
             elif current_game_state == "CUTSCENE":
                 if event.key == pygame.K_SPACE:
                     if cutscene_step < len(cutscene_texts) - 1:
@@ -487,7 +538,7 @@ while running:
                     else:
                         current_game_state = "PLAYING"
                         cutscene_active = False
-            
+
             elif current_game_state == "PLAYING":
                 if event.key == pygame.K_ESCAPE:
                     current_game_state = "PAUSED"
@@ -498,39 +549,49 @@ while running:
                     if nearby_npc:
                         dialogue_box.set_dialogues(nearby_npc.dialogues)
                         audio_manager.play_sound("talk")
-                        if isinstance(nearby_npc, QuestGiver) and not quest_system.has_quest(nearby_npc.quest_id):
-                            quest_system.add_quest(nearby_npc.quest_id, nearby_npc.quest_name, 
-                                                 nearby_npc.quest_description, nearby_npc.quest_requirements)
+                        if isinstance(nearby_npc, QuestGiver) and not quest_system.has_quest(
+                            nearby_npc.quest_id
+                        ):
+                            quest_system.add_quest(
+                                nearby_npc.quest_id,
+                                nearby_npc.quest_name,
+                                nearby_npc.quest_description,
+                                nearby_npc.quest_requirements,
+                            )
                     else:
-                        # Check for item pickup
                         nearby_item = check_item_pickup()
                         if nearby_item:
                             if isinstance(nearby_item, Chest):
                                 if not nearby_item.opened:
                                     contents = nearby_item.open_chest()
                                     for item in contents:
-                                        quest_system.add_item_to_inventory(item["type"], item["amount"])
+                                        quest_system.add_item_to_inventory(
+                                            item["type"], item["amount"]
+                                        )
                                     audio_manager.play_sound("item_pickup")
                             else:
                                 quest_system.add_item_to_inventory(nearby_item.item_type)
                                 audio_manager.play_sound("item_pickup")
                                 items.remove(nearby_item)
                                 all_sprites.remove(nearby_item)
-                
-                elif event.key in [pygame.K_SPACE, pygame.K_RETURN] and dialogue_box.visible:
+
+                elif (
+                    event.key in (pygame.K_SPACE, pygame.K_RETURN)
+                    and dialogue_box.visible
+                ):
                     dialogue_box.next_dialogue()
-                
+
                 elif event.key == pygame.K_q:
                     show_quest_log = not show_quest_log
-                
+
                 elif event.key == pygame.K_i:
-                    # TODO: Implement inventory
+                    # TODO: Implement inventory screen
                     pass
-            
+
             elif current_game_state == "PAUSED":
                 if event.key == pygame.K_ESCAPE:
                     current_game_state = "PLAYING"
-                elif event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
+                elif event.key in (pygame.K_SPACE, pygame.K_RETURN):
                     selected_option = pause_menu.get_selected_option()
                     if selected_option == "Resume":
                         current_game_state = "PLAYING"
@@ -539,43 +600,47 @@ while running:
                     elif selected_option == "Load Game":
                         load_game()
                     elif selected_option == "Settings":
+                        pause_menu.from_pause = True
                         current_game_state = "SETTINGS"
                     elif selected_option == "Main Menu":
                         current_game_state = "MENU"
-                elif event.key in [pygame.K_UP, pygame.K_w]:
+                elif event.key in (pygame.K_UP, pygame.K_w):
                     pause_menu.navigate(-1)
-                elif event.key in [pygame.K_DOWN, pygame.K_s]:
+                elif event.key in (pygame.K_DOWN, pygame.K_s):
                     pause_menu.navigate(1)
-            
+
             elif current_game_state == "GAME_OVER":
                 if event.key == pygame.K_r:
                     current_game_state = "PLAYING"
+                    player.health = player.max_health
                     player.rect.x, player.rect.y = respawn_point
                     environment.reset_levels()
-            
+
             elif current_game_state == "CONTROLLER_INFO":
                 if event.key == pygame.K_ESCAPE:
                     current_game_state = "MENU"
-            
+
             elif current_game_state == "SETTINGS":
                 if event.key == pygame.K_ESCAPE:
-                    if hasattr(pause_menu, 'from_pause') and pause_menu.from_pause:
+                    if getattr(pause_menu, "from_pause", False):
                         current_game_state = "PAUSED"
                         pause_menu.from_pause = False
                     else:
                         current_game_state = "MENU"
-                elif event.key == pygame.K_PLUS or event.key == pygame.K_EQUALS:
+                elif event.key in (pygame.K_PLUS, pygame.K_EQUALS):
                     audio_manager.adjust_volume(0.1)
                 elif event.key == pygame.K_MINUS:
                     audio_manager.adjust_volume(-0.1)
 
-    # Update game state
+    # -----------------------------------------------------------------------
+    # Rendering / state update
+    # -----------------------------------------------------------------------
     if current_game_state == "MENU":
         menu.draw_menu()
 
     elif current_game_state == "CUTSCENE":
         cutscene_timer += dt
-        if cutscene_timer > 3000:  # 3 seconds per text
+        if cutscene_timer > 3000:  # 3s per text panel
             if cutscene_step < len(cutscene_texts) - 1:
                 cutscene_step += 1
                 cutscene_timer = 0
@@ -588,67 +653,58 @@ while running:
         if show_quest_log:
             draw_quest_log()
         else:
-            # Only update if dialogue is not visible
             if not dialogue_box.visible:
                 all_walls = environment.get_current_walls()
                 player.update(all_walls, dialogue_box.visible)
-                
-                # Check area transitions
+                player.update_stats(dt / 1000.0)
+
                 check_area_transition()
-                
-                # Check ghost collision in cave
+
                 if environment.current_area == "cave":
                     ghost_hit = check_ghost_collision()
                     if ghost_hit:
-                        # Respawn player
-                        player.rect.x, player.rect.y = respawn_point
-                        audio_manager.play_sound("ghost_hit")
-                
-                # Update wandering NPCs
+                        if player.take_damage(10):
+                            audio_manager.play_sound("ghost_hit")
+                            player.rect.x, player.rect.y = respawn_point
+                            if player.health <= 0:
+                                current_game_state = "GAME_OVER"
+
                 for npc in npcs:
-                    if hasattr(npc, 'update'):
+                    if hasattr(npc, "update"):
                         npc.update()
-                
-                # Update ghosts
+
                 for ghost in ghosts:
                     ghost.update(player.rect.center)
-                
-                # Simple camera follow
+
                 camera_x = player.rect.centerx - SCREEN_WIDTH // 2
                 camera_y = player.rect.centery - SCREEN_HEIGHT // 2
                 camera_x = max(0, min(camera_x, environment.world_width - SCREEN_WIDTH))
                 camera_y = max(0, min(camera_y, environment.world_height - SCREEN_HEIGHT))
 
-            # Draw everything
             if environment.current_area != "cave":
-                SCREEN.fill((34, 139, 34))  # Grass background
+                SCREEN.fill((34, 139, 34))
             else:
-                SCREEN.fill((20, 20, 20))  # Dark cave background
-            
-            # Apply day/night cycle
+                SCREEN.fill((20, 20, 20))
+
             visuals.draw_day_night_cycle(SCREEN, game_time)
-            
-            # Draw environment with camera offset
+
             environment.draw(SCREEN, camera_x, camera_y)
-            
-            # Draw sprites with camera offset
+
             for sprite in all_sprites:
                 screen_x = sprite.rect.x - camera_x
                 screen_y = sprite.rect.y - camera_y
                 if -200 < screen_x < SCREEN_WIDTH + 200 and -200 < screen_y < SCREEN_HEIGHT + 200:
                     SCREEN.blit(sprite.image, (screen_x, screen_y))
-            
-            # Draw UI elements
-            visuals.draw_ui_elements(SCREEN, 100, 50)
-            
-            # Draw time UI
+
+            # Use actual player stats instead of hardcoded values.
+            visuals.draw_ui_elements(SCREEN, int(player.health), int(player.energy))
             draw_time_ui()
-            
-            # Draw minimap
+
             npc_positions = [(npc.rect.centerx, npc.rect.centery) for npc in npcs]
-            visuals.draw_minimap(SCREEN, (player.rect.centerx, player.rect.centery), npc_positions)
-            
-            # Draw interaction prompt
+            visuals.draw_minimap(
+                SCREEN, (player.rect.centerx, player.rect.centery), npc_positions
+            )
+
             if not dialogue_box.visible:
                 nearby_npc = check_npc_interaction()
                 if nearby_npc:
@@ -656,30 +712,39 @@ while running:
                     prompt_rect = prompt.get_rect()
                     prompt_rect.centerx = SCREEN_WIDTH // 2
                     prompt_rect.y = 50
-                    pygame.draw.rect(SCREEN, (0, 0, 0, 128), prompt_rect.inflate(20, 10))
+                    pygame.draw.rect(SCREEN, (0, 0, 0), prompt_rect.inflate(20, 10))
                     SCREEN.blit(prompt, prompt_rect)
                 else:
                     nearby_item = check_item_pickup()
                     if nearby_item:
                         if isinstance(nearby_item, Chest):
                             if not nearby_item.opened:
-                                prompt = small_font.render("Press SPACE to open chest", True, (255, 255, 255))
+                                prompt = small_font.render(
+                                    "Press SPACE to open chest", True, (255, 255, 255)
+                                )
                             else:
-                                prompt = small_font.render("Chest is empty", True, (150, 150, 150))
+                                prompt = small_font.render(
+                                    "Chest is empty", True, (150, 150, 150)
+                                )
                         else:
-                            prompt = small_font.render(f"Press SPACE to pick up {nearby_item.item_type}", True, (255, 255, 255))
+                            prompt = small_font.render(
+                                f"Press SPACE to pick up {nearby_item.item_type}",
+                                True,
+                                (255, 255, 255),
+                            )
                         prompt_rect = prompt.get_rect()
                         prompt_rect.centerx = SCREEN_WIDTH // 2
                         prompt_rect.y = 50
-                        pygame.draw.rect(SCREEN, (0, 0, 0, 128), prompt_rect.inflate(20, 10))
+                        pygame.draw.rect(SCREEN, (0, 0, 0), prompt_rect.inflate(20, 10))
                         SCREEN.blit(prompt, prompt_rect)
-            
+
             dialogue_box.draw()
-            
-            # Draw UI
-            quest_hint = small_font.render("Press Q for quests | ESC for pause", True, (200, 200, 200))
-            SCREEN.blit(quest_hint, (10, 10))
-            
+
+            quest_hint = small_font.render(
+                "Press Q for quests | ESC for pause", True, (200, 200, 200)
+            )
+            SCREEN.blit(quest_hint, (240, 10))
+
             pygame.display.flip()
 
     elif current_game_state == "PAUSED":
