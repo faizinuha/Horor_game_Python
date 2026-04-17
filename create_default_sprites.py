@@ -42,12 +42,6 @@ def create_all_default_sprites():
         path = os.path.join(sprite_dir, filename)
         pygame.image.save(surface, path)
         print(f"Created {path}")
-    
-    for filename, ((width, height), (rows, cols), color) in sheets.items():
-        surface = create_default_sprite_sheet(width, height, rows, cols, color)
-        path = os.path.join("assets/Sprite", filename)
-        pygame.image.save(surface, path)
-        print(f"Created {path}")
 
 if __name__ == "__main__":
     create_all_default_sprites()

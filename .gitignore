@@ -1,3 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtualenv / packaging
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# Game artifacts
+savegame.json
+
+# Node (kept for parity with previous .gitignore)
 node_modules/
 .env
-savegame.json/

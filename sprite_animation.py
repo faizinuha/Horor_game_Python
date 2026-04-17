@@ -6,6 +6,7 @@ class SpriteAnimation:
         self.current_frame = 0
         self.animation_timer = 0
         self.frame_duration = 100  # milliseconds per frame
+        self.current_animation = None
         
     def load_sprite_sheet(self, sheet_path, sprite_width, sprite_height, colorkey=(0, 255, 0)):
         """Load a sprite sheet and split it into individual frames"""
@@ -39,6 +40,8 @@ class SpriteAnimation:
 
     def update(self, delta_time):
         """Update the current animation frame"""
+        if not self.current_animation:
+            return
         self.animation_timer += delta_time
         if self.animation_timer >= self.frame_duration:
             self.animation_timer = 0
@@ -57,8 +60,7 @@ class SpriteAnimation:
 
     def set_animation(self, name):
         """Set the current animation"""
-        if name in self.animations and (not hasattr(self, 'current_animation') or 
-                                      self.current_animation != self.animations[name]):
+        if name in self.animations and self.current_animation != self.animations[name]:
             self.current_animation = self.animations[name]
             self.current_frame = 0
             self.animation_timer = 0

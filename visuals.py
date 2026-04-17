@@ -1,6 +1,4 @@
 import pygame
-
-import pygame
 import random
 
 class Visuals:
@@ -18,10 +16,10 @@ class Visuals:
         if effect_type == "sparkle":
             for _ in range(10):
                 particle = {
-                    'x': x + pygame.random.randint(-10, 10),
-                    'y': y + pygame.random.randint(-10, 10),
-                    'vx': pygame.random.randint(-2, 2),
-                    'vy': pygame.random.randint(-3, -1),
+                    'x': x + random.randint(-10, 10),
+                    'y': y + random.randint(-10, 10),
+                    'vx': random.randint(-2, 2),
+                    'vy': random.randint(-3, -1),
                     'life': 30,
                     'color': (255, 255, 100)
                 }
@@ -29,10 +27,10 @@ class Visuals:
         elif effect_type == "quest_complete":
             for _ in range(20):
                 particle = {
-                    'x': x + pygame.random.randint(-20, 20),
-                    'y': y + pygame.random.randint(-20, 20),
-                    'vx': pygame.random.randint(-3, 3),
-                    'vy': pygame.random.randint(-4, -1),
+                    'x': x + random.randint(-20, 20),
+                    'y': y + random.randint(-20, 20),
+                    'vx': random.randint(-3, 3),
+                    'vy': random.randint(-4, -1),
                     'life': 60,
                     'color': (100, 255, 100)
                 }
@@ -91,13 +89,13 @@ class Visuals:
         """Draw weather effects"""
         if weather == "rain":
             for _ in range(50):
-                x = pygame.random.randint(0, self.width)
-                y = pygame.random.randint(0, self.height)
+                x = random.randint(0, self.width)
+                y = random.randint(0, self.height)
                 pygame.draw.line(screen, (100, 100, 255), (x, y), (x - 2, y + 10), 1)
         elif weather == "snow":
             for _ in range(30):
-                x = pygame.random.randint(0, self.width)
-                y = pygame.random.randint(0, self.height)
+                x = random.randint(0, self.width)
+                y = random.randint(0, self.height)
                 pygame.draw.circle(screen, (255, 255, 255), (x, y), 2)
 
     def draw_ui_elements(self, screen, player_health=100, player_mana=50):
